@@ -1,15 +1,13 @@
-﻿import vk_api , random, telebot
+﻿import vk_api , random, telebot,logging
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from  vk_api import VkApi
-from respondent import new_message_rand
+from vk_api import VkApi
+from respondent import new_message_rand , a1
 from requests import get
 from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup
 
 ################### Логирование ###########################
-import logging
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
 console_out = logging.StreamHandler()
-
 logging.basicConfig(handlers=(file_log, console_out),
                     format=u'[%(asctime)s | %(levelname)s]: %(message)s',
                     datefmt='%m.%d.%Y %H:%M:%S',
@@ -18,8 +16,6 @@ logging.basicConfig(handlers=(file_log, console_out),
 ################ Служебные переменные #####################
 i = 0
 hell = False
-users_list_warn = " @keyn_prorok  "
-
 
 ################### Авторизация ###########################
 vk_session: VkApi = vk_api.VkApi(token=vktokenGroup)
@@ -27,91 +23,131 @@ longpoll = VkBotLongPoll(vk_session, IdGroupVK)
 vk = vk_session.get_api()
 bot = telebot.TeleBot(teletoken)
 
-###########################################################################################
+################################## Блок функций #######################################
 
 def kick( chat_id, member_id):
     vk.messages.removeChatUser(chat_id=chat_id, member_id=member_id)
 
 def send(msg):
-    vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=event.object['peer_id'])
+    vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=respondent.object.peer_id)
 
-#извлечение имени и фамилии
-def getUserName():
+def getUserName(): #извлечение имени и фамилии
 
-        userId = event.object['from_id']
+        userId = respondent.object.from_id
         if 0 < userId < 2000000000:
            username = vk.users.get(user_id=userId)
            first_name = username[0]['first_name']
            last_name = username[0]['last_name']
            user = str(first_name + " " + last_name)
+           return user
         else:
             None
 
+def GetMembers():
+    members = vk.messages.getConversationMembers(peer_id=respondent.object.peer_id,group_id=IdGroupVK)
+    membList = []
+    for mbs in members['items']:
+        member = mbs['member_id']
+        if member > 0:
+            membList.append(member)
+    return membList
+
+def RandomMember():
+        randMember = '@id' + str(random.choice((GetMembers())))
+        return randMember
 
 ###########################################################################################
 
 def vk_bot_respondent():
-    global hell , event,i
-    for event in longpoll.listen():
+    global hell, i, respondent , peerID, ss, srs
+    for respondent in longpoll.listen():
 
-        NEW = event.type == VkBotEventType.MESSAGE_NEW
-        TEXT = event.object['text']
-        peerID = event.object['peer_id']
+        ######################################### VK Event ########################################
+        NEW = respondent.type == VkBotEventType.MESSAGE_NEW
+        TEXT = respondent.object['text']
+        peerID = respondent.object['peer_id']
 
+        ############################### Словари из сообщений ######################################
+        TextSplitLowerDict = set(str(TEXT).lower().split())
+        TextDictSplitLines = set(str(TEXT).lower().splitlines())
 
+        ############################### Команда рандома на *кто...* ###############################
 
+        s = str(TEXT).lower().split(maxsplit=1)
+        if len(s) == 2:
+            if s[0]=="кто" and s[1]is not None:
+                ss = s[0] + ' ' + s[1]
+                srs = RandomMember()  + ' , ' + s[1]
+            else:
+                ss = None
+                srs = None
+        else:
+            ss = None
+            srs = None
+
+        ################################# Словарь для слово-ответ ################################№
+        command = {
+            'хуй': 'поцелуй',
+            'начать': 'кончать',
+            'помощь': 'себе помоги инвалид обоссаный',
+        }
+
+        ################################ Словарь для запрос-ответ #################################
+        command_service = {
+            'IDCHAT': "ID чата : " + str(peerID - 2000000000),
+            f"{ss}" : f"{srs} "
+        }
+
+        ############################### Обработка ######################################
         if NEW:
             i = i + 1
-            if TEXT == 'хуй':
-                send('поцелуй')
+            ################## Power Electronics Мем ##################
+            if a1 & TextSplitLowerDict:
+                pwmess = (f"🚯🚯🚯СПИСОК ФАНАТОВ 🚫🚫🚫Сглыпа)🚫🚫🚫 и ХЕЙТЕРОВ 💞💞💞Электроникса💞💞💞/💫❤Пауэр-электроникса❤💫: \n" 
+                    f"1. https://vk.com/jido_schweine (МРАЗЬ)  \n" 
+                    f"2. https://vk.com/ultima_resolucion (ПРЕДАТЕЛЬ) Электроникса, ЕРЕТИК\n" 
+                    f"3. https://vk.com/estenatu (СГЛЫПСКАЯ ПОДСТИЛКА), бывшая Хранительница Электроникса, теперь в прислуге у 🚫🚫🚫Сглыпа)🚫🚫🚫\n" 
+                    f"4. https://vk.com/keyn_prorok (ЛИЦЕМЕР), БАЛАБОЛ, ПРЕДАТЕЛЬ ЭЛЕКТРОНИКСА 'ДЭТ ИНДАСТРИАЛ' поклонник - ЕРЕТИК.\n" )
+                send(pwmess)
 
-            elif TEXT == 'начать':
-                send('кончать')
+            ################## Выбор значения по ключу из command ##################
+            elif TextSplitLowerDict & set(command):
+                    for element in TextSplitLowerDict:
+                        key = command.get(element)
+                        if element in TextSplitLowerDict:
+                           if key is not None: send(key)
 
-            elif TEXT == 'вкл еблана':
-                hell=True
-                send('стал ебланом')
+            ################## Выбор значения по ключу из command_service ##################
+            elif TextDictSplitLines & set(command_service):
+                    for element1 in TextDictSplitLines:
+                        key1 = command_service.get(element1)
+                        if element1 in TextDictSplitLines:
+                            if key1 is not None: send(key1)
 
-            elif TEXT == 'выкл еблана':
-                hell=False
-                send('все не еблан')
 
-            elif TEXT == 'помощь':
-                send('себе помоги инвалид обоссаный')
-
-            elif TEXT and i % 6 == 0 and hell==True:
+            elif TEXT and i % 6 == 0 :
                 send(new_message_rand())
 
-            elif TEXT == 'CABAL:INIT_KILL==TRUE and SYSTEM.WORK == FALSE':
-                vk.messages.send(random_id=random.randint(0, 999999), message="ВЫКЛЮЧАЮСЬ", peer_id=2000000001, attachments=[])
-                quit()
-
-            elif TEXT == 'IDCHAT':
-                send("ID чата : " + str(peerID - 2000000000))
-                #nameChat = vk.messages.getConversations(title = event.object.title)
-                #print(nameChat)
-
             ###########################################################################################
-            elif event.object.text in ['кик']:
+            elif respondent.object.text in ['кик']:
                 try:
-                    kick(chat_id=peerID - 2000000000, member_id=event.object.reply_message['from_id'])
+                    kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
                 except:
                     send("НЕЛЬЗЯ МУДИЛА")
         else:
             None
 
+
 ###########################################################################################
 
 def vk_bot_resend():
 
-    global i, event1
-    for event1 in longpoll.listen():
-        UserId1 = event1.object['from_id']
+    global i, resend
+    for resend in longpoll.listen():
+        UserId1 = resend.object['from_id']
 
-        if event1.obj.text == 'ping_anclaw':
-            vk.messages.send(random_id=random.randint(0, 999999), message="Поток 2 активен", peer_id=event1.obj.peer_id)
-
-
+        if resend.obj.text == 'ping_anclaw':
+            vk.messages.send(random_id=random.randint(0, 999999), message="Поток 2 активен", peer_id=resend.obj.peer_id)
 
         if 0 < UserId1 < 2000000000:
                 username = vk.users.get(user_id=UserId1)
@@ -123,15 +159,15 @@ def vk_bot_resend():
 
         ###########################################################################################
         if UserId1 > 0:
-            for att in event1.obj.attachments:
+            for att in resend.obj.attachments:
                 if att['type'] == 'photo':  # Если прислали фото
                     bot.send_message(idGroupTelegram,
                         (f"\n_____________________________________________________\n"
-                        f"{user1 + '  из чата : ' + str(event1.obj.peer_id)}\n"
+                        f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}\n"
                         f"{att['photo']['sizes'][-1]['url']}\n"
                         f"_____________________________________________________") )
                     logging.info(f"\n_____________________________________________________\n"
-                        f"{user1 + '  из чата : ' + str(event1.obj.peer_id)}\n"
+                        f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}\n"
                         f"{att['photo']['sizes'][-1]['url']}\n"
                         f"_____________________________________________________\n\n")
 
@@ -140,11 +176,11 @@ def vk_bot_resend():
                 elif att['type'] == 'doc':  # Если прислали документ
                     bot.send_message(idGroupTelegram,
                         (f"\n_____________________________________________________\n"
-                        f"{user1 + '  из чата : ' + str(event1.obj.peer_id)}\n"
+                        f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}\n"
                         f"{str(att['doc']['url']).replace('no_preview=1', '')}\n"
                         f"_____________________________________________________") )
                     logging.info(f"\n_____________________________________________________\n"
-                        f"{user1 + '  из чата : ' + str(event1.obj.peer_id)}\n"
+                        f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}\n"
                         f"{str(att['doc']['url']).replace('no_preview=1', '')}\n"
                         f"_____________________________________________________\n\n")
 
@@ -153,11 +189,11 @@ def vk_bot_resend():
                 elif att['type'] == 'video':
                     bot.send_message(idGroupTelegram,
                         (f"\n_____________________________________________________\n"
-                        f"{user1 + '  из чата : ' + str(event1.obj.peer_id)}\n"
+                        f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}\n"
                         f"https://vk.com/video{att['video']['owner_id']}_{att['video']['id']}\n"
                         f"\n_____________________________________________________"))
                     logging.info(f"\n_____________________________________________________\n"
-                      f"{user1 + '  из чата : ' + str(event1.obj.peer_id)}\n"
+                      f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}\n"
                       f"https://vk.com/video{att['video']['owner_id']}_{att['video']['id']}\n"
                       f"_____________________________________________________\n\n")
 
@@ -165,7 +201,7 @@ def vk_bot_resend():
 
                 elif att['type'] == 'wall':  # Если поделились постом
                     textbox = textboxFILE = str(f"\n_____________________________________________________\n"
-                                  f"{user1 + '  из чата : ' + str(event1.obj.peer_id)} поделился постом"
+                                  f"{user1 + '  из чата : ' + str(resend.obj.peer_id)} поделился постом"
                                   f"\n\n группа: {att['wall']['from']['name']}"
                                   f"\n\n{att['wall']['text']}")
                     textbox += str(f"\n_____________________________________________________")
@@ -178,6 +214,7 @@ def vk_bot_resend():
                                     textbox += str(f"\nhttps://vk.com/video{str(wall_att['video']['owner_id'])}_{str(wall_att['video']['id'])}\n")
                                     textboxFILE += str(f"\nhttps://vk.com/video{str(wall_att['video']['owner_id'])}_{str(wall_att['video']['id'])}\n")
                                     bot.send_message(idGroupTelegram, textbox)
+
                                 if wall_att['type'] == 'doc':
                                     textbox += str(f"\n{str(wall_att['doc']['url']).replace('no_preview=1', '')}\n")
                                     textboxFILE += str(f"\n{str(wall_att['doc']['url']).replace('no_preview=1', '')}\n")
@@ -201,54 +238,56 @@ def vk_bot_resend():
                 elif att['type'] == "link":  # Если прислали ссылку(напиример: на историю)
                     bot.send_message(idGroupTelegram,
                         (f"\n_____________________________________________________\n"
-                        f"{user1 + '  из чата : ' + str(event1.obj.peer_id)} поделился ссылкой"
+                        f"{user1 + '  из чата : ' + str(resend.obj.peer_id)} поделился ссылкой"
                         f"\n\n{att['link']['url']}"
                         f"\n_____________________________________________________"))
                     logging.info((f"\n_____________________________________________________\n"
-                        f"{user1 + '  из чата : ' + str(event1.obj.peer_id)} поделился ссылкой"
+                        f"{user1 + '  из чата : ' + str(resend.obj.peer_id)} поделился ссылкой"
                         f"\n\n{att['link']['url']}"
                         f"\n_____________________________________________________"))
 
         ###########################################################################################
 
-            if event1.object.fwd_messages:
+            if resend.object.fwd_messages:
                 try:
-                    print(event1.object.fwd_messages)
-                    for fwd in event1.object.fwd_messages:
 
+                    FwdTextBox = (f"_____________________________________\n"
+                                  f"{user1} из чата {resend.object.peer_id} переслал : \n"
+                                  f"_____________________________________\n")
+                    for fwd in resend.object.fwd_messages:
                         getname = fwd['from_id']
                         if 0 < getname < 2000000000:
-                            username1 = vk.users.get(user_id=getname)
-                            user2 = str(username1[0]['first_name'] + " " + username1[0]['last_name'])
-                            bot.send_message(idGroupTelegram,
-                             (   f" {user1} переслал : \n"
-                                 f"_____________________________________\n"
-                                 f"   {user2 + ' : ' + fwd['text']}\n"
-                                 f"_____________________________________"))
+                            username_ = vk.users.get(user_id=getname)
+                            user_ = str(username_[0]['first_name'] + " " + username_[0]['last_name'])
+                        else:
+                            user_ = "БОТ"
+                        FwdTextBox += ' | ' + user_ + ' : ' + fwd['text']  + "\n"
+                    FwdTextBox += f"_____________________________________\n"
+                    bot.send_message(idGroupTelegram, f"   {FwdTextBox}\n")
                 except:
                     bot.send_message(idGroupTelegram,
                               (f"Ошибка передачи \n"
-                               f"{event1.obj.fwd_messages}"))
+                               f"{resend.obj.fwd_messages}"))
 
         ###########################################################################################
 
-            if event1.obj.text != 'CABAL:INIT_KILL==TRUE and SYSTEM.WORK == FALSE' and event1.obj.text != "":
+            if resend.obj.text != 'CABAL:INIT_KILL==TRUE and SYSTEM.WORK == FALSE' and resend.obj.text != "":
                 bot.send_message(idGroupTelegram,
                                  str(f"{user1 +'( https://vk.com/id' + str(UserId1) + ' ) ' }"
-                                 f"\n{' Из чата (' + str(event1.obj.peer_id) + ') : '}\n"
+                                 f"\n{' Из чата (' + str(resend.obj.peer_id) + ') : '}\n"
                                  f"_____________________________________\n"
-                                 f"\n{event1.object['text']}\n" 
+                                 f"\n{resend.object['text']}\n" 
                                  f"_____________________________________") )
 
                 logging.info("|" + str(i) +
-                             "|  ЧАТ : " + str(event1.obj.peer_id - 2000000000) +
+                             "|  ЧАТ : " + str(resend.obj.peer_id - 2000000000) +
                              "  https://vk.com/id" + str(UserId1) +
                              "  Пользователь: " + str(user1) +
                              "\n_______________________________________________________________________________________\n" +
-                             " \n                                   " + str(event1.obj.text) + "\n" +
+                             " \n                                   " + str(resend.obj.text) + "\n" +
                              "_______________________________________________________________________________________\n\n\n\n")
 
-            elif event1.obj.text == "":
+            elif resend.obj.text == "":
                 None
 
 
