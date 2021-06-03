@@ -1,9 +1,9 @@
-﻿import vk_api , random, telebot,logging
+﻿import vk_api , random, telebot,logging, json
 from requests import get
 from vk_api import VkApi
 from respondent import new_message_rand , a1
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes
+from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -23,7 +23,10 @@ longpoll = VkBotLongPoll(vk_session, IdGroupVK)
 vk = vk_session.get_api()
 bot = telebot.TeleBot(teletoken)
 
+
 ################################## Блок функций #######################################
+
+
 
 def kick( chat_id, member_id):
     vk.messages.removeChatUser(chat_id=chat_id, member_id=member_id)
@@ -33,15 +36,13 @@ def send(msg):
 
 def getUserName(object): #извлечение имени и фамилии
 
-        userId = object
+        userId = int(object)
         if 0 < userId < 2000000000:
            username = vk.users.get(user_id=userId)
            first_name = username[0]['first_name']
            last_name = username[0]['last_name']
            user = str(first_name + " " + last_name)
            return user
-        else:
-            None
 
 def GetMembers():
     members = vk.messages.getConversationMembers(peer_id=respondent.object.peer_id,group_id=IdGroupVK)
@@ -147,7 +148,7 @@ def vk_bot_respondent():
                             if key1 is not None: send(key1)
 
 
-            elif TEXT and i % 6 == 0 :
+            elif TEXT and i % count_period == 0 :
                 send(new_message_rand())
 
             ###########################################################################################
@@ -161,9 +162,13 @@ def vk_bot_respondent():
 
 ###########################################################################################
 
-def vk_bot_resend():
 
+
+def vk_bot_resend():
     global i, resend
+    ################################### пишем в чат вк прмо из телеги #####################
+
+
     for resend in longpoll.listen():
 
         UserId1 = resend.object['from_id']
@@ -248,27 +253,25 @@ def vk_bot_resend():
                             logging.info(textboxFILE)
 
         ###########################################################################################
+
             if resend.object.fwd_messages:
-                try:
+                #try:
 
                     FwdTextBox = (f"_____________________________________\n"
                                   f"{user1} из чата {resend.object.peer_id  }  \n"
                                   f"\n{' [     ' + TitleChat + '     ]' + ' : '} \n переслал :\n"
                                   f"_____________________________________\n")
-                    for fwd in resend.object.fwd_messages:
-                        getname = fwd['from_id']
-                        if 0 < getname < 2000000000:
-                            username_ = vk.users.get(user_id=getname)
-                            user_ = str(username_[0]['first_name'] + " " + username_[0]['last_name'])
-                        else:
-                            user_ = "БОТ"
-                        FwdTextBox += ' | ' + user_ + ' : ' + fwd['text']  + "\n"
-                    FwdTextBox += f"_____________________________________\n"
-                    bot.send_message(node, f"   {FwdTextBox}\n")
-                except:
-                    bot.send_message(node,
-                              (f"Ошибка передачи \n"
-                               f"{resend.obj.fwd_messages}"))
+                    fwdjson = str(resend.object.fwd_messages)
+
+                    tt1 = json.JSONDecoder().decode(fwdjson)
+                    print(tt1)
+
+                    #fl = [' | ' + str(userg) + ' : ' + str(text) + "\n"]
+                    #bot.send_message(node, f"   {fl}\n")
+                #except:
+                    #bot.send_message(node,
+                              #(f"Ошибка передачи \n"
+                               #f"{resend.obj.fwd_messages}"))
 
         ###########################################################################################
 
@@ -283,3 +286,12 @@ def vk_bot_resend():
 
             elif resend.obj.text == "":
                 None
+
+def vkNode():
+    @bot.message_handler(content_types='text')
+    def TG_VK(message):
+        if message.chat.id == -1001266840436:
+            msg = message.text
+            vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=2000000001)
+    bot.polling(none_stop=True,interval=0)
+
