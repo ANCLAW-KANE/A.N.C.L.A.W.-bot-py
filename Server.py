@@ -3,7 +3,7 @@ from requests import get
 from vk_api import VkApi
 from respondent import new_message_rand , a1
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period
+from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period , command
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -67,24 +67,46 @@ def SendTG(adress,TB):
     bot.send_message(adress, TB)
     logging.info(TB)
 
-def GET_CHAT_LIST():
-    get_items_chat = vk.messages.getConversationsById(peer_ids=respondent.object.peer_id)
-    CHAT_LIST = []
-    for chats in get_items_chat['items']:
-        chat_local_id = chats['peer']['local_id']
-        if chat_local_id > 0:
-                CHAT_LIST.append(chat_local_id)
-    return CHAT_LIST
+#def GET_CHAT_LIST():
+#    get_items_chat = vk.messages.getConversationsById(peer_ids=respondent.object.peer_id)
+#    CHAT_LIST = []
+#    for chats in get_items_chat['items']:
+#        chat_local_id = chats['peer']['local_id']
+#        if chat_local_id > 0:
+#                CHAT_LIST.append(chat_local_id)
+#    return CHAT_LIST
 
 def GET_CHAT_TITLE(object):
     get_items_chat = vk.messages.getConversationsById(peer_ids=object)
     for chats in get_items_chat['items']:
         chat_title = chats['chat_settings']['title']
         return chat_title
+
+def reverse_Nodes():
+    reverseNodes = []
+    for idchat in Nodes.keys():
+        reverseNodes.append((Nodes[idchat], idchat))
+        getreversenode = dict(reverseNodes)
+    return getreversenode
+
+def WHO(object):# Команда рандома на *кто...*
+    s = str(object).lower().split(maxsplit=1)
+    if len(s) == 2:
+        if s[0] == "кто" and s[1] is not None:
+            ss = s[0] + ' ' + s[1]
+            srs = RandomMember() + ' , ' + s[1]
+        else:
+            ss = None
+            srs = None
+    else:
+        ss = None
+        srs = None
+    return ss , srs
+
 ###########################################################################################
 
 def vk_bot_respondent():
-    global hell, i, respondent , peerID, ss, srs
+    global hell, i, respondent , peerID
     for respondent in longpoll.listen():
 
         ######################################### VK Event ########################################
@@ -96,29 +118,10 @@ def vk_bot_respondent():
         TextSplitLowerDict = set(str(TEXT).lower().split())
         TextDictSplitLines = set(str(TEXT).lower().splitlines())
 
-        ############################### Команда рандома на *кто...* ###############################
-        s = str(TEXT).lower().split(maxsplit=1)
-        if len(s) == 2:
-            if s[0]=="кто" and s[1]is not None:
-                ss = s[0] + ' ' + s[1]
-                srs = RandomMember()  + ' , ' + s[1]
-            else:
-                ss = None
-                srs = None
-        else:
-            ss = None
-            srs = None
-
-        ################################# Словарь для слово-ответ ################################№
-        command = {
-            'хуй': 'поцелуй',
-            'начать': 'кончать',
-            'помощь': 'себе помоги инвалид обоссаный',
-        }
         ################################ Словарь для запрос-ответ #################################
         command_service = {
-            '/idchat': "ID чата : " + str(peerID - 2000000000),
-            f"{ss}" : f"{srs} "
+            '/idchat'       : "ID чата : " + str(peerID - 2000000000), #узнать ID чата
+            f"{WHO(TEXT)}"  : f"{WHO(TEXT)} " #Команда рандома на *кто...*
         }
 
         ############################### Обработка ######################################
@@ -166,9 +169,6 @@ def vk_bot_respondent():
 
 def vk_bot_resend():
     global i, resend
-    ################################### пишем в чат вк прмо из телеги #####################
-
-
     for resend in longpoll.listen():
 
         UserId1 = resend.object['from_id']
@@ -181,6 +181,8 @@ def vk_bot_resend():
             node = Nodes.get(PeerId)
         else:
             node = idGroupTelegram
+
+
 
         ############################### Служебные функции #####################################
         if resend.obj.text == 'ping_anclaw':
@@ -287,11 +289,14 @@ def vk_bot_resend():
             elif resend.obj.text == "":
                 None
 
+################################### пишем в чат вк прмо из телеги #####################
 def vkNode():
     @bot.message_handler(content_types='text')
     def TG_VK(message):
-        if message.chat.id == -1001266840436:
+        idchat = message.chat.id
+        if idchat in reverse_Nodes():
+            node = reverse_Nodes().get(idchat)
             msg = message.text
-            vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=2000000001)
-    bot.polling(none_stop=True,interval=0)
+            vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=node)
+    bot.polling(none_stop=True, interval=0)
 
