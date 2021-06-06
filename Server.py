@@ -89,20 +89,6 @@ def reverse_Nodes():
         getreversenode = dict(reverseNodes)
     return getreversenode
 
-def WHO(object):# Команда рандома на *кто...*
-    s = str(object).lower().split(maxsplit=1)
-    if len(s) == 2:
-        if s[0] == "кто" and s[1] is not None:
-            ss = s[0] + ' ' + s[1]
-            srs = RandomMember() + ' , ' + s[1]
-        else:
-            ss = None
-            srs = None
-    else:
-        ss = None
-        srs = None
-    return ss , srs
-
 ###########################################################################################
 
 def vk_bot_respondent():
@@ -118,10 +104,24 @@ def vk_bot_respondent():
         TextSplitLowerDict = set(str(TEXT).lower().split())
         TextDictSplitLines = set(str(TEXT).lower().splitlines())
 
+        ################################ Команда рандома на *кто...* ##############################
+
+        s = str(TEXT).lower().split(maxsplit=1)
+        if len(s) == 2:
+            if s[0] == "кто" and s[1] is not None:
+                ss = s[0] + ' ' + s[1]
+                srs = RandomMember() + ' , ' + s[1]
+            else:
+                ss = None
+                srs = None
+        else:
+            ss = None
+            srs = None
+
         ################################ Словарь для запрос-ответ #################################
         command_service = {
             '/idchat'       : "ID чата : " + str(peerID - 2000000000), #узнать ID чата
-            f"{WHO(TEXT)}"  : f"{WHO(TEXT)} " #Команда рандома на *кто...*
+            f"{ss}"  : f"{srs} " #Команда рандома на *кто...*
         }
 
         ############################### Обработка ######################################
