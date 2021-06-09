@@ -1,9 +1,9 @@
-﻿import vk_api , random, telebot,logging, json
+﻿import vk_api , random, telebot,logging, json,os
 from requests import get
 from vk_api import VkApi
 from respondent import new_message_rand , a1
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period , command
+from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period , command, vktokenUser
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -18,10 +18,18 @@ i = 0
 hell = False
 
 ################### Авторизация ###########################
+#Группа
 vk_session: VkApi = vk_api.VkApi(token=vktokenGroup)
-longpoll = VkBotLongPoll(vk_session, IdGroupVK)
 vk = vk_session.get_api()
+#Пользователь
+vk_session_user : VkApi = vk_api.VkApi(token=vktokenUser)
+vk_user = vk_session_user.get_api()
+
+longpoll = VkBotLongPoll(vk_session, IdGroupVK)
 bot = telebot.TeleBot(teletoken)
+
+upload = vk_api.VkUpload(vk_user)
+
 
 
 ################################## Блок функций #######################################
@@ -285,6 +293,8 @@ def vk_bot_resend():
                         f"\n{resend.object['text']}\n" 
                         f"_____________________________________\n\n")
                 SendTG(node,texts)
+                ts = vk_user.video.get(owner_id='388145277',videos='388145277_456239830')
+                print(ts)
 
             elif resend.obj.text == "":
                 None
@@ -298,5 +308,20 @@ def vkNode():
             node = reverse_Nodes().get(idchat)
             msg = message.text
             vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=node)
+    @bot.message_handler(content_types='video')
+    def TG_VK1(message):
+        idchat = message.chat.id
+        if idchat in reverse_Nodes():
+            node = reverse_Nodes().get(idchat)
+            idvideo = message.video.file_id
+            filevideo = bot.get_file(idvideo)
+            name = idvideo + '.mp4'
+            down = bot.download_file(filevideo.file_path)
+            # link = f"https://api.telegram.org/file/bot{teletoken}/{filevideo.file_path}"
+            with open(name, 'bw')as f:
+                f.write(down)
+            u = upload.video(video_file=name,name=idvideo,wallpost=False,is_private=True,group_id=IdGroupVK)
+            vidos = "video"+str(u['owner_id']) + '_' + str(u['video_id']) + "?list=" + str(u['access_key'])
+            vk.messages.send(random_id=random.randint(0, 999999), message='', peer_id=node,attachment=vidos)
+            os.remove(name)
     bot.polling(none_stop=True, interval=0)
-
