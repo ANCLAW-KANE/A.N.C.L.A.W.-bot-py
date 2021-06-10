@@ -12,11 +12,9 @@ logging.basicConfig(handlers=(file_log, console_out),
                     format=u'[%(asctime)s | %(levelname)s]: %(message)s',
                     datefmt='%m.%d.%Y %H:%M:%S',
                     level=logging.INFO)
-
 ################ Служебные переменные #####################
 i = 0
 hell = False
-
 ################### Авторизация ###########################
 #Группа
 vk_session: VkApi = vk_api.VkApi(token=vktokenGroup)
@@ -29,13 +27,7 @@ longpoll = VkBotLongPoll(vk_session, IdGroupVK)
 bot = telebot.TeleBot(teletoken)
 
 upload = vk_api.VkUpload(vk_user)
-
-
-
 ################################## Блок функций #######################################
-
-
-
 def kick( chat_id, member_id):
     vk.messages.removeChatUser(chat_id=chat_id, member_id=member_id)
 
@@ -43,7 +35,6 @@ def send(msg):
     vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=respondent.object.peer_id)
 
 def getUserName(object): #извлечение имени и фамилии
-
         userId = int(object)
         if 0 < userId < 2000000000:
            username = vk.users.get(user_id=userId)
@@ -98,22 +89,17 @@ def reverse_Nodes():
     return getreversenode
 
 ###########################################################################################
-
 def vk_bot_respondent():
     global hell, i, respondent , peerID
     for respondent in longpoll.listen():
-
         ######################################### VK Event ########################################
         NEW = respondent.type == VkBotEventType.MESSAGE_NEW
         TEXT = respondent.object['text']
         peerID = respondent.object['peer_id']
-
         ############################### Словари из сообщений ######################################
         TextSplitLowerDict = set(str(TEXT).lower().split())
         TextDictSplitLines = set(str(TEXT).lower().splitlines())
-
         ################################ Команда рандома на *кто...* ##############################
-
         s = str(TEXT).lower().split(maxsplit=1)
         if len(s) == 2:
             if s[0] == "кто" and s[1] is not None:
@@ -125,13 +111,11 @@ def vk_bot_respondent():
         else:
             ss = None
             srs = None
-
         ################################ Словарь для запрос-ответ #################################
         command_service = {
             '/idchat'       : "ID чата : " + str(peerID - 2000000000), #узнать ID чата
             f"{ss}"  : f"{srs} " #Команда рандома на *кто...*
         }
-
         ############################### Обработка ######################################
         if NEW:
             i = i + 1
@@ -143,25 +127,20 @@ def vk_bot_respondent():
                     f"3. https://vk.com/estenatu (СГЛЫПСКАЯ ПОДСТИЛКА), бывшая Хранительница Электроникса, теперь в прислуге у 🚫🚫🚫Сглыпа)🚫🚫🚫\n" 
                     f"4. https://vk.com/keyn_prorok (ЛИЦЕМЕР), БАЛАБОЛ, ПРЕДАТЕЛЬ ЭЛЕКТРОНИКСА 'ДЭТ ИНДАСТРИАЛ' поклонник - ЕРЕТИК.\n" )
                 send(pwmess)
-
             ################## Выбор значения по ключу из command ##################
             elif TextSplitLowerDict & set(command):
                     for element in TextSplitLowerDict:
                         key = command.get(element)
                         if element in TextSplitLowerDict:
                            if key is not None: send(key)
-
             ################## Выбор значения по ключу из command_service ##################
             elif TextDictSplitLines & set(command_service):
                     for element1 in TextDictSplitLines:
                         key1 = command_service.get(element1)
                         if element1 in TextDictSplitLines:
                             if key1 is not None: send(key1)
-
-
             elif TEXT and i % count_period == 0 :
                 send(new_message_rand())
-
             ###########################################################################################
             elif respondent.object.text in ['кик']:
                 try:
@@ -170,36 +149,25 @@ def vk_bot_respondent():
                     send("НЕЛЬЗЯ МУДИЛА")
         else:
             None
-
 ###########################################################################################
-
-
-
 def vk_bot_resend():
     global i, resend
     for resend in longpoll.listen():
-
         UserId1 = resend.object['from_id']
         user1 = str(getUserName(resend.object.from_id))
         PeerId = resend.object.peer_id
         TitleChat = GET_CHAT_TITLE(PeerId)
-
         ########################## Распределение точек отправки ###############################
         if PeerId in Nodes:
             node = Nodes.get(PeerId)
         else:
             node = idGroupTelegram
-
-
-
         ############################### Служебные функции #####################################
         if resend.obj.text == 'ping_anclaw':
             vk.messages.send(random_id=random.randint(0, 999999), message="Поток 2 активен", peer_id=resend.obj.peer_id)
-
         ################################## Обработчик #########################################
         if UserId1 > 0:
             for att in resend.obj.attachments:
-
                 tb1 =(f"\n_____________________________________________________\n"
                         f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}\n" 
                         f"{'  [   ' + TitleChat + '   ]'}\n")
@@ -208,29 +176,22 @@ def vk_bot_resend():
                     tb1 += (f"{att['photo']['sizes'][-1]['url']}\n"
                         f"_____________________________________________________")
                     SendTG(node,tb1)
-
                 ###########################################################################################
-
                 elif att['type'] == 'doc':  # Если прислали документ
                     tb1 += (f"{str(att['doc']['url']).replace('no_preview=1', '')}\n"
                         f"_____________________________________________________")
                     SendTG(node,tb1)
-
                 ###########################################################################################
-
                 elif att['type'] == 'video':
                     tb1 += (f"https://vk.com/video{att['video']['owner_id']}_{att['video']['id']}\n"
                         f"\n_____________________________________________________")
                     SendTG(node,tb1)
-
                 ###########################################################################################
-
                 elif att['type'] == "link":  # Если прислали ссылку(напиример: на историю)
                     tb1 += (f"\n\n{att['link']['url']}"
                         f"\n_____________________________________________________")
                     SendTG(node,tb1)
             ###########################################################################################
-
                 elif att['type'] == 'wall':  # Если поделились постом
                     textbox = textboxFILE = str(f"\n_____________________________________________________\n"
                                   f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}"
@@ -261,9 +222,7 @@ def vk_bot_resend():
                             bot.send_message(node,textbox)
                             textboxFILE += str(f"\n_____________________________________________________\n")
                             logging.info(textboxFILE)
-
         ###########################################################################################
-
             if resend.object.fwd_messages:
                 #try:
 
@@ -284,7 +243,6 @@ def vk_bot_resend():
                                #f"{resend.obj.fwd_messages}"))
 
         ###########################################################################################
-
             if  resend.obj.text != "":
                 texts = (f"\n{user1 +'( https://vk.com/id' + str(UserId1) + ' ) ' }"
                         f"{' Из чата (' + str(resend.obj.peer_id) + ')'}" 
@@ -293,35 +251,29 @@ def vk_bot_resend():
                         f"\n{resend.object['text']}\n" 
                         f"_____________________________________\n\n")
                 SendTG(node,texts)
-                ts = vk_user.video.get(owner_id='388145277',videos='388145277_456239830')
-                print(ts)
-
             elif resend.obj.text == "":
                 None
-
 ################################### пишем в чат вк прмо из телеги #####################
 def vkNode():
-    @bot.message_handler(content_types='text')
+    @bot.message_handler(content_types=['text','video'])
     def TG_VK(message):
         idchat = message.chat.id
         if idchat in reverse_Nodes():
             node = reverse_Nodes().get(idchat)
-            msg = message.text
-            vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=node)
-    @bot.message_handler(content_types='video')
-    def TG_VK1(message):
-        idchat = message.chat.id
-        if idchat in reverse_Nodes():
-            node = reverse_Nodes().get(idchat)
-            idvideo = message.video.file_id
-            filevideo = bot.get_file(idvideo)
-            name = idvideo + '.mp4'
-            down = bot.download_file(filevideo.file_path)
-            # link = f"https://api.telegram.org/file/bot{teletoken}/{filevideo.file_path}"
-            with open(name, 'bw')as f:
-                f.write(down)
-            u = upload.video(video_file=name,name=idvideo,wallpost=False,is_private=True,group_id=IdGroupVK)
-            vidos = "video"+str(u['owner_id']) + '_' + str(u['video_id']) + "?list=" + str(u['access_key'])
-            vk.messages.send(random_id=random.randint(0, 999999), message='', peer_id=node,attachment=vidos)
-            os.remove(name)
+            if message.text:
+                msg = message.text
+                vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=node)
+            if message.video:
+                idvideo = message.video.file_id
+                filevideo = bot.get_file(idvideo)
+                captionvideo = message.caption
+                name = idvideo + '.mp4'
+                down = bot.download_file(filevideo.file_path)
+                # link = f"https://api.telegram.org/file/bot{teletoken}/{filevideo.file_path}"
+                with open(name, 'bw')as f:
+                    f.write(down)
+                u = upload.video(video_file=name,name=idvideo,wallpost=0,is_private=True,group_id=IdGroupVK)
+                vidos = "video"+str(u['owner_id']) + '_' + str(u['video_id']) + "?list=" + str(u['access_key'])
+                vk.messages.send(random_id=random.randint(0, 999999), message=captionvideo, peer_id=node,attachment=vidos)
+                os.remove(name)
     bot.polling(none_stop=True, interval=0)
