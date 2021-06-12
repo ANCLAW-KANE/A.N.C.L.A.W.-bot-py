@@ -149,6 +149,7 @@ def vk_bot_respondent():
                     send("НЕЛЬЗЯ МУДИЛА")
         else:
             None
+        print(respondent)
 ###########################################################################################
 def vk_bot_resend():
     global i, resend
@@ -255,8 +256,9 @@ def vk_bot_resend():
                 None
 ################################### пишем в чат вк прмо из телеги #####################
 def vkNode():
-    @bot.message_handler(content_types=['text','video'])
+    @bot.message_handler(content_types=['text','video','photo'])
     def TG_VK(message):
+        print(f"{message}\n")
         idchat = message.chat.id
         if idchat in reverse_Nodes():
             node = reverse_Nodes().get(idchat)
@@ -275,5 +277,19 @@ def vkNode():
                 u = upload.video(video_file=name,name=idvideo,wallpost=0,is_private=True,group_id=IdGroupVK)
                 vidos = "video"+str(u['owner_id']) + '_' + str(u['video_id']) + "?list=" + str(u['access_key'])
                 vk.messages.send(random_id=random.randint(0, 999999), message=captionvideo, peer_id=node,attachment=vidos)
+                print(f"\n{vidos}\n")
                 os.remove(name)
+            if message.photo:
+                idphoto = message.photo[2].file_id
+                filephoto = bot.get_file(idphoto)
+                captionphoto = message.caption
+                namephoto = idphoto + '.jpg'
+                download = bot.download_file(filephoto.file_path)
+                with open(namephoto,'bw') as f:
+                    f.write(download)
+                u = upload.photo_messages(photos=namephoto,peer_id=node)[0]
+                photo = "photo" + str(u['owner_id']) + '_' + str(u['id']) + "_" + str(u['access_key'])
+                vk.messages.send(random_id=random.randint(0, 999999), message=captionphoto, peer_id=node, attachment=photo)
+                print(f"\n{photo}\n")
+                os.remove(namephoto)
     bot.polling(none_stop=True, interval=0)
