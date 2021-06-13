@@ -1,9 +1,10 @@
-﻿import vk_api , random, telebot,logging, json,os
+﻿import vk_api , random, telebot,logging, json,os, magic
+import mimetypes as mtps
 from requests import get
 from vk_api import VkApi
 from respondent import new_message_rand , a1
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period , command, vktokenUser
+from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period , command, vktokenUser, types
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -87,6 +88,10 @@ def reverse_Nodes():
         reverseNodes.append((Nodes[idchat], idchat))
         getreversenode = dict(reverseNodes)
     return getreversenode
+
+def write_file(name,getfile):
+    with open(name, 'bw') as f:
+        f.write(getfile)
 
 ###########################################################################################
 def vk_bot_respondent():
@@ -256,15 +261,17 @@ def vk_bot_resend():
                 None
 ################################### пишем в чат вк прмо из телеги #####################
 def vkNode():
-    @bot.message_handler(content_types=['text','video','photo'])
+    @bot.message_handler(content_types=['text','video','photo','document','animation'])
     def TG_VK(message):
         print(f"{message}\n")
         idchat = message.chat.id
         if idchat in reverse_Nodes():
             node = reverse_Nodes().get(idchat)
+            ###########################################################################################
             if message.text:
                 msg = message.text
                 vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=node)
+            ###########################################################################################
             if message.video:
                 idvideo = message.video.file_id
                 filevideo = bot.get_file(idvideo)
@@ -272,24 +279,56 @@ def vkNode():
                 name = idvideo + '.mp4'
                 down = bot.download_file(filevideo.file_path)
                 # link = f"https://api.telegram.org/file/bot{teletoken}/{filevideo.file_path}"
-                with open(name, 'bw')as f:
-                    f.write(down)
+                write_file(name,down)
                 u = upload.video(video_file=name,name=idvideo,wallpost=0,is_private=True,group_id=IdGroupVK)
                 vidos = "video"+str(u['owner_id']) + '_' + str(u['video_id']) + "?list=" + str(u['access_key'])
                 vk.messages.send(random_id=random.randint(0, 999999), message=captionvideo, peer_id=node,attachment=vidos)
-                print(f"\n{vidos}\n")
+                logging.info(f"\n{vidos}\n")
                 os.remove(name)
+            ###########################################################################################
             if message.photo:
                 idphoto = message.photo[2].file_id
                 filephoto = bot.get_file(idphoto)
                 captionphoto = message.caption
                 namephoto = idphoto + '.jpg'
                 download = bot.download_file(filephoto.file_path)
-                with open(namephoto,'bw') as f:
-                    f.write(download)
+                write_file(namephoto,download)
                 u = upload.photo_messages(photos=namephoto,peer_id=node)[0]
                 photo = "photo" + str(u['owner_id']) + '_' + str(u['id']) + "_" + str(u['access_key'])
                 vk.messages.send(random_id=random.randint(0, 999999), message=captionphoto, peer_id=node, attachment=photo)
-                print(f"\n{photo}\n")
+                logging.info(f"\n{photo}\n")
                 os.remove(namephoto)
+            ###########################################################################################
+            if message.document:
+                try:
+                    iddocument = message.document.file_id
+                    filedocument = bot.get_file(iddocument)
+                    captiondocument = message.caption
+                    if captiondocument is None: captiondocument = ''
+                    download = bot.download_file(filedocument.file_path)
+                    sep = str(message.document.mime_type).split(sep='/')[1]
+                    if sep == 'mp4':
+                        namedocument = iddocument + '.' + sep
+                        write_file(namedocument,download)
+                        u = upload.video(video_file=namedocument, name=iddocument, wallpost=0, is_private=True,group_id=IdGroupVK)
+                        animation = "video" + str(u['owner_id']) + '_' + str(u['video_id']) + "?list=" + str(u['access_key'])
+                        logging.info(f"\n{animation}\n")
+                        vk.messages.send(random_id=random.randint(0, 999999), message=captiondocument, peer_id=node,attachment=animation)
+                    else:
+                    ############################### распределение MIME типов ##################################
+                        if sep in types: sepget = types.get(sep)
+                        else: sepget = 'test'
+                    ###########################################################################################
+                        namedocument = iddocument + '.' + sepget
+                        write_file(namedocument, download)
+                        mtpsget = mtps.guess_extension(message.document.mime_type)
+                        if mtpsget is None: mtpsget = (magic.Magic(mime=True)).from_file(namedocument)
+                        u = upload.document(doc=namedocument,title=str(random.randint(1,1000000)),group_id=IdGroupVK,to_wall=0)
+                        document = "doc"+str(u['doc']['owner_id']) + '_' + str(u['doc']['id']) + '?' + str(u['doc']['url']).split(sep='?')[1].replace('&no_preview=1','')
+                        logging.info(f"\n{namedocument}\n{document}\n")
+                        vk.messages.send(random_id=random.randint(0, 999999), message= f"{captiondocument}\n{mtpsget}",peer_id=node, attachment=document)
+                        ###########################################################################################
+                    os.remove(namedocument)
+                except:
+                    SendTG(message.chat.id,'\n⚠⚠⚠ Ошибка загрузки ⚠⚠⚠')
     bot.polling(none_stop=True, interval=0)
