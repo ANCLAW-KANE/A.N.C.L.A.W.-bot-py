@@ -38,3 +38,10 @@ command = {
     '2': '2',
     '3': '3',
 }
+
+###################### MIME типы файлов для отправки в вк (документы) ####################
+types = {
+'vnd.openxmlformats-officedocument.wordprocessingml.document' : 'docx',
+'vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'xlsx',
+'plain' : 'txt',
+}
