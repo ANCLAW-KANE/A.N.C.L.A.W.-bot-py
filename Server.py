@@ -1,34 +1,40 @@
-﻿import vk_api , random, telebot,logging, json,os, magic
+﻿import vk_api , random, telebot,logging, json,os, magic, lottie
+from PIL import Image
 import mimetypes as mtps
 from requests import get
 from vk_api import VkApi
 from respondent import new_message_rand , a1
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period , command, vktokenUser, types
+from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period , command, vktokenUser, \
+    types ,pwmess ,CAPTCHA_EVENT
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
 console_out = logging.StreamHandler()
-logging.basicConfig(handlers=(file_log, console_out),
-                    format=u'[%(asctime)s | %(levelname)s]: %(message)s',
-                    datefmt='%m.%d.%Y %H:%M:%S',
-                    level=logging.INFO)
+logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(levelname)s]: %(message)s',
+                    datefmt='%m.%d.%Y %H:%M:%S', level=logging.INFO)
 ################ Служебные переменные #####################
 i = 0
-hell = False
+key = ''
 ################### Авторизация ###########################
-#Группа
-vk_session: VkApi = vk_api.VkApi(token=vktokenGroup)
-vk = vk_session.get_api()
-#Пользователь
-vk_session_user : VkApi = vk_api.VkApi(token=vktokenUser)
-vk_user = vk_session_user.get_api()
-
-longpoll = VkBotLongPoll(vk_session, IdGroupVK)
 bot = telebot.TeleBot(teletoken)
+
+vk_session: VkApi = vk_api.VkApi(token=vktokenGroup)#Группа
+vk = vk_session.get_api()
+longpoll = VkBotLongPoll(vk_session, IdGroupVK)
+
+def captcha_handler(captcha):#обход капчи
+    for captcha_trigger in longpoll.listen():
+        if captcha_trigger.object.peer_id == CAPTCHA_EVENT:
+            vk.messages.send(random_id=random.randint(0, 999999), message=f"Enter captcha code: {captcha.get_url()}", peer_id=CAPTCHA_EVENT)
+            return captcha.try_again( captcha_trigger.object.text)
+
+vk_session_user : VkApi = vk_api.VkApi(token=vktokenUser,captcha_handler=captcha_handler)#Пользователь
+vk_user = vk_session_user.get_api()
 
 upload = vk_api.VkUpload(vk_user)
 ################################## Блок функций #######################################
+
 def kick( chat_id, member_id):
     vk.messages.removeChatUser(chat_id=chat_id, member_id=member_id)
 
@@ -93,12 +99,21 @@ def write_file(name,getfile):
     with open(name, 'bw') as f:
         f.write(getfile)
 
-###########################################################################################
+def clear_docs():
+    d = vk_user.docs.get(owner_id='-'+ str(IdGroupVK))
+    docs = []
+    for i in d['items']:
+        doc = str(i['id'])
+        docs.append(doc)
+    for doc_ in docs:
+        vk_user.docs.delete(owner_id='-'+ str(IdGroupVK),doc_id=doc_)
+    send('Удаление завершено')
+
+################################### вк бот ################################################
 def vk_bot_respondent():
-    global hell, i, respondent , peerID
+    global i, respondent , peerID
     for respondent in longpoll.listen():
         ######################################### VK Event ########################################
-        NEW = respondent.type == VkBotEventType.MESSAGE_NEW
         TEXT = respondent.object['text']
         peerID = respondent.object['peer_id']
         ############################### Словари из сообщений ######################################
@@ -118,19 +133,14 @@ def vk_bot_respondent():
             srs = None
         ################################ Словарь для запрос-ответ #################################
         command_service = {
-            '/idchat'       : "ID чата : " + str(peerID - 2000000000), #узнать ID чата
-            f"{ss}"  : f"{srs} " #Команда рандома на *кто...*
+            '/idchat'       : "ID чата : " + str(peerID), #узнать ID чата
+            f"{ss}"  : f"{srs} ", #Команда рандома на *кто...*
         }
         ############################### Обработка ######################################
-        if NEW:
+        if respondent.type == VkBotEventType.MESSAGE_NEW:
             i = i + 1
             ################## Power Electronics Мем ##################
             if a1 & TextSplitLowerDict:
-                pwmess = (f"🚯🚯🚯СПИСОК ФАНАТОВ 🚫🚫🚫Сглыпа)🚫🚫🚫 и ХЕЙТЕРОВ 💞💞💞Электроникса💞💞💞/💫❤Пауэр-электроникса❤💫: \n" 
-                    f"1. https://vk.com/jido_schweine (МРАЗЬ)  \n" 
-                    f"2. https://vk.com/ultima_resolucion (ПРЕДАТЕЛЬ) Электроникса, ЕРЕТИК\n" 
-                    f"3. https://vk.com/estenatu (СГЛЫПСКАЯ ПОДСТИЛКА), бывшая Хранительница Электроникса, теперь в прислуге у 🚫🚫🚫Сглыпа)🚫🚫🚫\n" 
-                    f"4. https://vk.com/keyn_prorok (ЛИЦЕМЕР), БАЛАБОЛ, ПРЕДАТЕЛЬ ЭЛЕКТРОНИКСА 'ДЭТ ИНДАСТРИАЛ' поклонник - ЕРЕТИК.\n" )
                 send(pwmess)
             ################## Выбор значения по ключу из command ##################
             elif TextSplitLowerDict & set(command):
@@ -144,6 +154,7 @@ def vk_bot_respondent():
                         key1 = command_service.get(element1)
                         if element1 in TextDictSplitLines:
                             if key1 is not None: send(key1)
+
             elif TEXT and i % count_period == 0 :
                 send(new_message_rand())
             ###########################################################################################
@@ -152,10 +163,13 @@ def vk_bot_respondent():
                     kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
                 except:
                     send("НЕЛЬЗЯ МУДИЛА")
+
+            elif TEXT == '/CABAL:clear_docs=init':
+                 clear_docs()
         else:
             None
-        print(respondent)
-###########################################################################################
+############################ отправка в чат телеги из вк ##################################
+
 def vk_bot_resend():
     global i, resend
     for resend in longpoll.listen():
@@ -259,27 +273,24 @@ def vk_bot_resend():
                 SendTG(node,texts)
             elif resend.obj.text == "":
                 None
-################################### пишем в чат вк прмо из телеги #####################
+
+############################ отправка в чат вк из телеги ##################################
 def vkNode():
-    @bot.message_handler(content_types=['text','video','photo','document','animation'])
+    @bot.message_handler(content_types=['text','video','photo','document','animation','sticker'])
     def TG_VK(message):
-        print(f"{message}\n")
         idchat = message.chat.id
         if idchat in reverse_Nodes():
             node = reverse_Nodes().get(idchat)
             ###########################################################################################
             if message.text:
-                msg = message.text
-                vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=node)
+                msgtg = message.text
+                vk.messages.send(random_id=random.randint(0, 999999), message=msgtg, peer_id=node)
             ###########################################################################################
             if message.video:
                 idvideo = message.video.file_id
-                filevideo = bot.get_file(idvideo)
                 captionvideo = message.caption
                 name = idvideo + '.mp4'
-                down = bot.download_file(filevideo.file_path)
-                # link = f"https://api.telegram.org/file/bot{teletoken}/{filevideo.file_path}"
-                write_file(name,down)
+                write_file(name,bot.download_file((bot.get_file(idvideo)).file_path))
                 u = upload.video(video_file=name,name=idvideo,wallpost=0,is_private=True,group_id=IdGroupVK)
                 vidos = "video"+str(u['owner_id']) + '_' + str(u['video_id']) + "?list=" + str(u['access_key'])
                 vk.messages.send(random_id=random.randint(0, 999999), message=captionvideo, peer_id=node,attachment=vidos)
@@ -288,11 +299,9 @@ def vkNode():
             ###########################################################################################
             if message.photo:
                 idphoto = message.photo[2].file_id
-                filephoto = bot.get_file(idphoto)
                 captionphoto = message.caption
                 namephoto = idphoto + '.jpg'
-                download = bot.download_file(filephoto.file_path)
-                write_file(namephoto,download)
+                write_file(namephoto,bot.download_file((bot.get_file(idphoto)).file_path))
                 u = upload.photo_messages(photos=namephoto,peer_id=node)[0]
                 photo = "photo" + str(u['owner_id']) + '_' + str(u['id']) + "_" + str(u['access_key'])
                 vk.messages.send(random_id=random.randint(0, 999999), message=captionphoto, peer_id=node, attachment=photo)
@@ -302,14 +311,12 @@ def vkNode():
             if message.document:
                 try:
                     iddocument = message.document.file_id
-                    filedocument = bot.get_file(iddocument)
                     captiondocument = message.caption
                     if captiondocument is None: captiondocument = ''
-                    download = bot.download_file(filedocument.file_path)
                     sep = str(message.document.mime_type).split(sep='/')[1]
                     if sep == 'mp4':
                         namedocument = iddocument + '.' + sep
-                        write_file(namedocument,download)
+                        write_file(namedocument,bot.download_file((bot.get_file(iddocument)).file_path))
                         u = upload.video(video_file=namedocument, name=iddocument, wallpost=0, is_private=True,group_id=IdGroupVK)
                         animation = "video" + str(u['owner_id']) + '_' + str(u['video_id']) + "?list=" + str(u['access_key'])
                         logging.info(f"\n{animation}\n")
@@ -320,7 +327,7 @@ def vkNode():
                         else: sepget = 'test'
                     ###########################################################################################
                         namedocument = iddocument + '.' + sepget
-                        write_file(namedocument, download)
+                        write_file(namedocument, bot.download_file((bot.get_file(iddocument)).file_path))
                         mtpsget = mtps.guess_extension(message.document.mime_type)
                         if mtpsget is None: mtpsget = (magic.Magic(mime=True)).from_file(namedocument)
                         u = upload.document(doc=namedocument,title=str(random.randint(1,1000000)),group_id=IdGroupVK,to_wall=0)
@@ -331,4 +338,26 @@ def vkNode():
                     os.remove(namedocument)
                 except:
                     SendTG(message.chat.id,'\n⚠⚠⚠ Ошибка загрузки ⚠⚠⚠')
+            ###########################################################################################
+            if message.sticker:
+                idsticker = message.sticker.file_id
+                if str((bot.get_file(idsticker)).file_path).split(sep='.')[1] == 'tgs': tgs = '.tgs'
+                else: tgs = '.webp'
+                namesticker = idsticker + tgs
+                write_file(namesticker,bot.download_file((bot.get_file(idsticker)).file_path))
+                if tgs == '.webp':
+                    ipng = Image.open(namesticker).convert()
+                    ipng.save(f"{idsticker}.png", "png")
+                #if str(namesticker).split(sep='.')[1] == 'tgs':
+                #    fileconv = os.popen(f'lottie_convert.py {namesticker} {idsticker}.gif')
+                #    write_file(idsticker+'.gif',fileconv)
+                if tgs != '.tgs':
+                    os.remove(namesticker)
+                    u = upload.document(doc=f"{idsticker}.png", title=str(random.randint(1, 1000000)), group_id=IdGroupVK,to_wall=0)
+                    sticker = "doc" + str(u['doc']['owner_id']) + '_' + str(u['doc']['id']) + '?' + str(u['doc']['url']).split(sep='?')[1].replace('&no_preview=1', '')
+                    logging.info(f"\n{idsticker}.png\n{sticker}\n")
+                    vk.messages.send(random_id=random.randint(0, 999999), message='',peer_id=node, attachment=sticker)
+                    os.remove(f"{idsticker}.png")
+                else:
+                    os.remove(namesticker)
     bot.polling(none_stop=True, interval=0)
