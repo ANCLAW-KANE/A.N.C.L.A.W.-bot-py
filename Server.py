@@ -1,4 +1,4 @@
-﻿import vk_api , random, telebot,logging, json,os, magic, lottie
+﻿import vk_api , random, telebot,logging, json,os, magic, re, lottie
 from PIL import Image
 import mimetypes as mtps
 from requests import get
@@ -102,19 +102,29 @@ def write_file(name,getfile):
 def clear_docs():
     d = vk_user.docs.get(owner_id='-'+ str(IdGroupVK))
     docs = []
-    for i in d['items']:
-        doc = str(i['id'])
+    for item in d['items']:
+        doc = str(item['id'])
         docs.append(doc)
     for doc_ in docs:
         vk_user.docs.delete(owner_id='-'+ str(IdGroupVK),doc_id=doc_)
-    send('Удаление завершено')
+    return 'Удаление завершено'
 
-def WHO(object):
+def WHO(object,get_sender):
     s = str(object).lower().split(maxsplit=1)
     if len(s) == 2:
-        if s[0] == "кто" and s[1] is not None:
+        tag = re.compile('@(\w+)').search(s[1])
+        if s[0] == "!кто" and s[1] is not None:
             ss = s[0] + ' ' + s[1]
-            srs = RandomMember() + ' , ' + s[1]
+            srs = "❓ ➡➡➡  " + RandomMember() + '  ⬅⬅⬅  :  ' + s[1]
+        elif s[0] == "!вероятность" and s[1] is not None:
+            ss = s[0] + ' ' + s[1]
+            srs = "📊 Вероятность для  (" + s[1] + ') : ' + str(random.randint(0,100)) +'%'
+        elif s[0] == "!забив" and tag:
+            ss = s[0] + ' ' + s[1]
+            srs = "📣🐖   Забив : \n\n"+ "🇺🇦" + get_sender + "🇺🇦        🆚        ✡" + s[1] + '✡\n\n🏆   Победил: ' + random.choice([get_sender , tag.group(0)]) + "   🏆"
+        elif s[0] == "!факт" and s[1] is not None:
+            ss = s[0] + ' ' + s[1]
+            srs = "❗ Факт (" + s[1] + ") " + random.choice(['Ложь ⛔', 'Правда ✅'])
         else:
             ss = None
             srs = None
@@ -134,14 +144,15 @@ def vk_bot_respondent():
         ######################################### VK Event ########################################
         TEXT = respondent.object['text']
         peerID = respondent.object['peer_id']
+        who = WHO(TEXT,getUserName(respondent.object.from_id))
         ############################### Словари из сообщений ######################################
         TextSplitLowerDict = set(str(TEXT).lower().split())
         TextDictSplitLines = set(str(TEXT).lower().splitlines())
         ################################ Словарь для запрос-ответ #################################
         command_service = {
-            '/idchat'       : "ID чата : " + str(peerID), #узнать ID чата
-            #'/CABAL:clear_docs=init' : clear_docs(),
-            f"{WHO(TEXT)[0]}"  : f"{WHO(TEXT)[1]} ", #Команда рандома на *кто...*
+            '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
+            '/clear_docs_init' : clear_docs(), #очистка доков в группе
+            f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
         }
         ############################### Обработка ######################################
         if respondent.type == VkBotEventType.MESSAGE_NEW:
