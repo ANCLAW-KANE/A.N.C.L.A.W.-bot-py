@@ -3,10 +3,10 @@ from PIL import Image
 import mimetypes as mtps
 from requests import get
 from vk_api import VkApi
-from respondent import new_message_rand , a1
+from respondent import new_message_rand
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period , command, vktokenUser, \
-    types ,pwmess ,CAPTCHA_EVENT
+    types ,CAPTCHA_EVENT
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -15,7 +15,7 @@ logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(
                     datefmt='%m.%d.%Y %H:%M:%S', level=logging.INFO)
 ################ Служебные переменные #####################
 i = 0
-key = ''
+
 ################### Авторизация ###########################
 bot = telebot.TeleBot(teletoken)
 
@@ -109,6 +109,24 @@ def clear_docs():
         vk_user.docs.delete(owner_id='-'+ str(IdGroupVK),doc_id=doc_)
     send('Удаление завершено')
 
+def WHO(object):
+    s = str(object).lower().split(maxsplit=1)
+    if len(s) == 2:
+        if s[0] == "кто" and s[1] is not None:
+            ss = s[0] + ' ' + s[1]
+            srs = RandomMember() + ' , ' + s[1]
+        else:
+            ss = None
+            srs = None
+    else:
+        ss = None
+        srs = None
+    return [ss,srs]
+
+def convert_img(input,output_name,convert_to):
+    ipng = Image.open(input).convert()
+    ipng.save(output_name,convert_to)
+
 ################################### вк бот ################################################
 def vk_bot_respondent():
     global i, respondent , peerID
@@ -119,55 +137,33 @@ def vk_bot_respondent():
         ############################### Словари из сообщений ######################################
         TextSplitLowerDict = set(str(TEXT).lower().split())
         TextDictSplitLines = set(str(TEXT).lower().splitlines())
-        ################################ Команда рандома на *кто...* ##############################
-        s = str(TEXT).lower().split(maxsplit=1)
-        if len(s) == 2:
-            if s[0] == "кто" and s[1] is not None:
-                ss = s[0] + ' ' + s[1]
-                srs = RandomMember() + ' , ' + s[1]
-            else:
-                ss = None
-                srs = None
-        else:
-            ss = None
-            srs = None
         ################################ Словарь для запрос-ответ #################################
         command_service = {
             '/idchat'       : "ID чата : " + str(peerID), #узнать ID чата
-            f"{ss}"  : f"{srs} ", #Команда рандома на *кто...*
+            #'/CABAL:clear_docs=init' : clear_docs(),
+            f"{WHO(TEXT)[0]}"  : f"{WHO(TEXT)[1]} ", #Команда рандома на *кто...*
         }
         ############################### Обработка ######################################
         if respondent.type == VkBotEventType.MESSAGE_NEW:
             i = i + 1
-            ################## Power Electronics Мем ##################
-            if a1 & TextSplitLowerDict:
-                send(pwmess)
             ################## Выбор значения по ключу из command ##################
-            elif TextSplitLowerDict & set(command):
+            if TextSplitLowerDict & set(command):
                     for element in TextSplitLowerDict:
                         key = command.get(element)
-                        if element in TextSplitLowerDict:
-                           if key is not None: send(key)
+                        if key is not None: send(key)
             ################## Выбор значения по ключу из command_service ##################
             elif TextDictSplitLines & set(command_service):
                     for element1 in TextDictSplitLines:
                         key1 = command_service.get(element1)
-                        if element1 in TextDictSplitLines:
-                            if key1 is not None: send(key1)
+                        if key1 is not None: send(key1)
 
             elif TEXT and i % count_period == 0 :
                 send(new_message_rand())
             ###########################################################################################
             elif respondent.object.text in ['кик']:
-                try:
-                    kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
-                except:
-                    send("НЕЛЬЗЯ МУДИЛА")
-
-            elif TEXT == '/CABAL:clear_docs=init':
-                 clear_docs()
-        else:
-            None
+                try: kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
+                except: send("НЕЛЬЗЯ МУДИЛА")
+        else: None
 ############################ отправка в чат телеги из вк ##################################
 
 def vk_bot_resend():
@@ -178,10 +174,8 @@ def vk_bot_resend():
         PeerId = resend.object.peer_id
         TitleChat = GET_CHAT_TITLE(PeerId)
         ########################## Распределение точек отправки ###############################
-        if PeerId in Nodes:
-            node = Nodes.get(PeerId)
-        else:
-            node = idGroupTelegram
+        if PeerId in Nodes: node = Nodes.get(PeerId)
+        else: node = idGroupTelegram
         ############################### Служебные функции #####################################
         if resend.obj.text == 'ping_anclaw':
             vk.messages.send(random_id=random.randint(0, 999999), message="Поток 2 активен", peer_id=resend.obj.peer_id)
@@ -345,9 +339,7 @@ def vkNode():
                 else: tgs = '.webp'
                 namesticker = idsticker + tgs
                 write_file(namesticker,bot.download_file((bot.get_file(idsticker)).file_path))
-                if tgs == '.webp':
-                    ipng = Image.open(namesticker).convert()
-                    ipng.save(f"{idsticker}.png", "png")
+                if tgs == '.webp': convert_img(namesticker,f"{idsticker}.png","png")
                 #if str(namesticker).split(sep='.')[1] == 'tgs':
                 #    fileconv = os.popen(f'lottie_convert.py {namesticker} {idsticker}.gif')
                 #    write_file(idsticker+'.gif',fileconv)
