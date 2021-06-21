@@ -1,12 +1,12 @@
-﻿import vk_api , random, telebot,logging, json,os, magic, re, lottie
+﻿import vk_api , random, telebot,logging, json,os, magic, re, math, lottie
 from PIL import Image
 import mimetypes as mtps
 from requests import get
 from vk_api import VkApi
 from respondent import new_message_rand
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes , count_period , command, vktokenUser, \
-    types ,CAPTCHA_EVENT
+from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes ,\
+    count_period , command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -40,6 +40,9 @@ def kick( chat_id, member_id):
 
 def send(msg):
     vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=respondent.object.peer_id)
+
+def send_attachments(att,text):
+    vk.messages.send(random_id=random.randint(0, 999999), message=text, peer_id=respondent.object.peer_id,attachment=att)
 
 def getUserName(object): #извлечение имени и фамилии
         userId = int(object)
@@ -109,6 +112,31 @@ def clear_docs():
         vk_user.docs.delete(owner_id='-'+ str(IdGroupVK),doc_id=doc_)
     return 'Удаление завершено'
 
+def get_list_album():
+    albums = vk_user.photos.getAlbums(owner_id=OWNER_ALBUM_PHOTO)
+    listAlbum = []
+    for item in albums['items']:
+        album = str(item['id'])
+        size = str(item['size'])
+        privacy = str(item['privacy_view'])
+        if re.compile("'all'").search(privacy):
+            listAlbum.append(album+'_'+size)
+    return listAlbum
+
+def get_album_photo():
+    try:
+        parse_album = str(random.choice(get_list_album())).split(sep='_')
+        if parse_album[1] == '0': parse_album = str(random.choice(get_list_album())).split(sep='_')
+        if int(parse_album[1]) > 50: offset_max = math.floor(int(parse_album[1]) / 50)
+        else: offset_max = 0
+        alb_ph = vk_user.photos.get(owner_id=OWNER_ALBUM_PHOTO, album_id=parse_album[0], count=50 , offset=random.randint(0,offset_max) * 50)
+        photoList = []
+        for photo in alb_ph['items']:
+            idphoto = str(photo['id'])
+            photoList.append(idphoto)
+        if photoList is not None: return send_attachments(f"photo{str(OWNER_ALBUM_PHOTO)}_{random.choice(photoList)}",'')
+    except: return send_attachments('photo388145277_456240127','блядь я мем пробухал')
+
 def WHO(object,get_sender):
     s = str(object).lower().split(maxsplit=1)
     if len(s) == 2:
@@ -159,14 +187,18 @@ def vk_bot_respondent():
             i = i + 1
             ################## Выбор значения по ключу из command ##################
             if TextSplitLowerDict & set(command):
-                    for element in TextSplitLowerDict:
-                        key = command.get(element)
-                        if key is not None: send(key)
+                for element in TextSplitLowerDict:
+                    key = command.get(element)
+                    if key is not None: send(key)
             ################## Выбор значения по ключу из command_service ##################
             elif TextDictSplitLines & set(command_service):
-                    for element1 in TextDictSplitLines:
-                        key1 = command_service.get(element1)
-                        if key1 is not None: send(key1)
+                for element1 in TextDictSplitLines:
+                    key1 = command_service.get(element1)
+                    if key1 is not None: send(key1)
+            ################## Выбор значения по ключу из command_attachments ##################
+            elif TEXT == '/мем':
+                get_album_photo()
+
 
             elif TEXT and i % count_period == 0 :
                 send(new_message_rand())
@@ -284,12 +316,16 @@ def vkNode():
     @bot.message_handler(content_types=['text','video','photo','document','animation','sticker'])
     def TG_VK(message):
         idchat = message.chat.id
+        username = str(message.from_user.first_name) + ' ' + str(message.from_user.last_name)
         if idchat in reverse_Nodes():
             node = reverse_Nodes().get(idchat)
             ###########################################################################################
-            if message.text:
-                msgtg = message.text
+            if message.text and not message.forward_from :
+                msgtg = username + ' : ' + message.text
                 vk.messages.send(random_id=random.randint(0, 999999), message=msgtg, peer_id=node)
+            if message.forward_from:
+                msgtgfwd = ' От  ' + str(message.forward_from.first_name) + ' ' + "\n " + str(message.text)
+                vk.messages.send(random_id=random.randint(0, 999999), message=msgtgfwd, peer_id=node)
             ###########################################################################################
             if message.video:
                 idvideo = message.video.file_id
