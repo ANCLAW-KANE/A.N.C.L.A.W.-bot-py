@@ -1,4 +1,4 @@
-﻿import vk_api , random, telebot,logging, json,os, magic, re, math, lottie
+﻿import vk_api , random, telebot,logging, json,os, magic, re, math , time
 from PIL import Image
 import mimetypes as mtps
 from requests import get
@@ -6,7 +6,7 @@ from vk_api import VkApi
 from respondent import new_message_rand
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes ,\
-    count_period , command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO
+    count_period , command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,PEER_CRUSH_EVENT
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -32,6 +32,9 @@ def captcha_handler(captcha):#обход капчи
 vk_session_user : VkApi = vk_api.VkApi(token=vktokenUser,captcha_handler=captcha_handler)#Пользователь
 vk_user = vk_session_user.get_api()
 
+vk_session_kate : VkApi = vk_api.VkApi(token='60df71375fbe40b161c1d8d5ca4d91928cc3833e6bda8610c74ef8cb22173f909550b6afc0eedd5ff162b',captcha_handler=captcha_handler)
+vk_kate = vk_session_kate.get_api()
+
 upload = vk_api.VkUpload(vk_user)
 ################################## Блок функций #######################################
 
@@ -56,14 +59,18 @@ def getUserName(object): #извлечение имени и фамилии
 def GetMembers():
     members = vk.messages.getConversationMembers(peer_id=respondent.object.peer_id,group_id=IdGroupVK)
     membList = []
+    membListNotAdmin = []
     for mbs in members['items']:
         member = mbs['member_id']
+        admin = mbs.get('is_admin', False)
         if member > 0:
             membList.append(member)
-    return membList
+        if member > 0 and admin != True:
+            membListNotAdmin.append(member)
+    return [membList,membListNotAdmin]
 
 def RandomMember():
-    userID = random.choice((GetMembers()))
+    userID = random.choice((GetMembers()[0]))
     username = vk.users.get(user_id=userID)
     first_name = username[0]['first_name']
     last_name = username[0]['last_name']
@@ -165,6 +172,12 @@ def convert_img(input,output_name,convert_to):
     ipng = Image.open(input).convert()
     ipng.save(output_name,convert_to)
 
+def KILL_ALL_MEMBERS(object):
+    list_members = GetMembers()[1]
+    for member in list_members:
+        kick(chat_id= object - 2000000000, member_id=member)
+
+
 ################################### вк бот ################################################
 def vk_bot_respondent():
     global i, respondent , peerID
@@ -182,6 +195,10 @@ def vk_bot_respondent():
             '/clear_docs_init' : clear_docs(), #очистка доков в группе
             f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
         }
+        #command_attachments = {
+        #    '/мем' : get_album_photo(),
+        #    '/cabal:kill_all_members=active': KILL_ALL_MEMBERS(peerID),
+        #}
         ############################### Обработка ######################################
         if respondent.type == VkBotEventType.MESSAGE_NEW:
             i = i + 1
@@ -196,10 +213,8 @@ def vk_bot_respondent():
                     key1 = command_service.get(element1)
                     if key1 is not None: send(key1)
             ################## Выбор значения по ключу из command_attachments ##################
-            elif TEXT == '/мем':
-                get_album_photo()
-
-
+            elif TEXT == '/мем' : get_album_photo()
+            elif TEXT == '/cabal:kill_all_members=active': KILL_ALL_MEMBERS(peerID)
             elif TEXT and i % count_period == 0 :
                 send(new_message_rand())
             ###########################################################################################
@@ -282,22 +297,26 @@ def vk_bot_resend():
         ###########################################################################################
             if resend.object.fwd_messages:
                 #try:
-
+                    fwdlist = []
+                    ug = []
+                    tg = []
                     FwdTextBox = (f"_____________________________________\n"
                                   f"{user1} из чата {resend.object.peer_id  }  \n"
                                   f"\n{' [     ' + TitleChat + '     ]' + ' : '} \n переслал :\n"
                                   f"_____________________________________\n")
-                    fwdjson = str(resend.object.fwd_messages)
-
-                    tt1 = json.JSONDecoder().decode(fwdjson)
-                    print(tt1)
-
+                    for fwd in resend.object.fwd_messages:
+                        fg = fwd.get('fwd_messages')
+                        fwdlist.append(fg)
+                        for user in resend.object.fwd_messages:
+                            ug = user['from_id']
+                        for text in resend.object.fwd_messages:
+                            tg = text['text']
+                    print(fwdlist)
+                    print(f"{ug},' ',{tg}")
                     #fl = [' | ' + str(userg) + ' : ' + str(text) + "\n"]
                     #bot.send_message(node, f"   {fl}\n")
                 #except:
-                    #bot.send_message(node,
-                              #(f"Ошибка передачи \n"
-                               #f"{resend.obj.fwd_messages}"))
+                    #bot.send_message(node,(f"Ошибка передачи\n{resend.obj.fwd_messages}"))
 
         ###########################################################################################
             if  resend.obj.text != "":
@@ -316,16 +335,29 @@ def vkNode():
     @bot.message_handler(content_types=['text','video','photo','document','animation','sticker'])
     def TG_VK(message):
         idchat = message.chat.id
-        username = str(message.from_user.first_name) + ' ' + str(message.from_user.last_name)
+        idmessage_start = int(message.message_id)
+        msg = message.text
         if idchat in reverse_Nodes():
             node = reverse_Nodes().get(idchat)
             ###########################################################################################
-            if message.text and not message.forward_from :
-                msgtg = username + ' : ' + message.text
-                vk.messages.send(random_id=random.randint(0, 999999), message=msgtg, peer_id=node)
-            if message.forward_from:
-                msgtgfwd = ' От  ' + str(message.forward_from.first_name) + ' ' + "\n " + str(message.text)
-                vk.messages.send(random_id=random.randint(0, 999999), message=msgtgfwd, peer_id=node)
+            if message.text:
+                idmessage = int(message.message_id) - 1
+                if msg and not message.forward_from and not message.forward_sender_name:
+                    last_name = message.from_user.last_name
+                    if last_name is None: last_name = ''
+                    msgtg = str(message.from_user.first_name) + ' ' + last_name + ' : ' + msg
+                    vk.messages.send(random_id=idmessage, message=msgtg, peer_id=node)
+                if idmessage < idmessage_start:
+                    if message.forward_from:
+                        time.sleep(1)
+                        last_name_fwd = message.forward_from.last_name
+                        if msg is None: msg = ''
+                        if last_name_fwd is None: last_name_fwd = ''
+                        user = str(message.forward_from.first_name) + ' ' + str(last_name_fwd)
+                        vk.messages.send(random_id=idmessage, message=' От  ' + user + "\n " + str(msg),peer_id=node)
+                    if message.forward_sender_name:
+                        time.sleep(1)
+                        vk.messages.send(random_id=idmessage, message=' От  ' + message.forward_sender_name + "\n " + str(msg),peer_id=node)
             ###########################################################################################
             if message.video:
                 idvideo = message.video.file_id
@@ -358,7 +390,7 @@ def vkNode():
                     if sep == 'mp4':
                         namedocument = iddocument + '.' + sep
                         write_file(namedocument,bot.download_file((bot.get_file(iddocument)).file_path))
-                        u = upload.video(video_file=namedocument, name=iddocument, wallpost=0, is_private=True,group_id=IdGroupVK)
+                        u = upload.video(video_file=namedocument, name=iddocument, wallpost=0, is_private=True,group_id=IdGroupVK,repeat=True)
                         animation = "video" + str(u['owner_id']) + '_' + str(u['video_id']) + "?list=" + str(u['access_key'])
                         logging.info(f"\n{animation}\n")
                         vk.messages.send(random_id=random.randint(0, 999999), message=captiondocument, peer_id=node,attachment=animation)
@@ -377,7 +409,8 @@ def vkNode():
                         vk.messages.send(random_id=random.randint(0, 999999), message= f"{captiondocument}\n{mtpsget}",peer_id=node, attachment=document)
                         ###########################################################################################
                     os.remove(namedocument)
-                except:
+                except Exception as e:
+                    vk.messages.send(random_id=random.randint(0, 999999), message= e,peer_id=PEER_CRUSH_EVENT)
                     SendTG(message.chat.id,'\n⚠⚠⚠ Ошибка загрузки ⚠⚠⚠')
             ###########################################################################################
             if message.sticker:
@@ -387,9 +420,6 @@ def vkNode():
                 namesticker = idsticker + tgs
                 write_file(namesticker,bot.download_file((bot.get_file(idsticker)).file_path))
                 if tgs == '.webp': convert_img(namesticker,f"{idsticker}.png","png")
-                #if str(namesticker).split(sep='.')[1] == 'tgs':
-                #    fileconv = os.popen(f'lottie_convert.py {namesticker} {idsticker}.gif')
-                #    write_file(idsticker+'.gif',fileconv)
                 if tgs != '.tgs':
                     os.remove(namesticker)
                     u = upload.document(doc=f"{idsticker}.png", title=str(random.randint(1, 1000000)), group_id=IdGroupVK,to_wall=0)
@@ -397,6 +427,5 @@ def vkNode():
                     logging.info(f"\n{idsticker}.png\n{sticker}\n")
                     vk.messages.send(random_id=random.randint(0, 999999), message='',peer_id=node, attachment=sticker)
                     os.remove(f"{idsticker}.png")
-                else:
-                    os.remove(namesticker)
+                else: os.remove(namesticker)
     bot.polling(none_stop=True, interval=0)
