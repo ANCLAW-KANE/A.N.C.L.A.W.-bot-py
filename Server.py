@@ -1,12 +1,12 @@
-﻿import vk_api , random, telebot,logging, json,os, magic, re, math , time
+﻿import vk_api , random, telebot,logging, json,os, magic, re, math , time , requests
 from PIL import Image
 import mimetypes as mtps
 from requests import get
-from vk_api import VkApi
+from vk_api import VkApi , audio
 from respondent import new_message_rand
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes ,\
-    count_period , command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,PEER_CRUSH_EVENT
+    count_period , command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,PEER_CRUSH_EVENT,full_permission_user_token
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -24,6 +24,7 @@ vk = vk_session.get_api()
 longpoll = VkBotLongPoll(vk_session, IdGroupVK)
 
 def captcha_handler(captcha):#обход капчи
+    print(f"Enter captcha code: {captcha.get_url()}")
     for captcha_trigger in longpoll.listen():
         if captcha_trigger.object.peer_id == CAPTCHA_EVENT:
             vk.messages.send(random_id=random.randint(0, 999999), message=f"Enter captcha code: {captcha.get_url()}", peer_id=CAPTCHA_EVENT)
@@ -32,10 +33,12 @@ def captcha_handler(captcha):#обход капчи
 vk_session_user : VkApi = vk_api.VkApi(token=vktokenUser,captcha_handler=captcha_handler)#Пользователь
 vk_user = vk_session_user.get_api()
 
-vk_session_kate : VkApi = vk_api.VkApi(token='60df71375fbe40b161c1d8d5ca4d91928cc3833e6bda8610c74ef8cb22173f909550b6afc0eedd5ff162b',captcha_handler=captcha_handler)
-vk_kate = vk_session_kate.get_api()
+vk_session_full : VkApi = vk_api.VkApi(token=full_permission_user_token,captcha_handler=captcha_handler)#VKME
+vk_full = vk_session_full.get_api()
 
-upload = vk_api.VkUpload(vk_user)
+longpoll_full = VkBotLongPoll(vk_session_full, IdGroupVK)
+upload = vk_api.VkUpload(vk_full)
+api_audio = vk_api.audio.VkAudio(vk_session_full)
 ################################## Блок функций #######################################
 
 def kick( chat_id, member_id):
@@ -226,7 +229,7 @@ def vk_bot_respondent():
 
 def vk_bot_resend():
     global i, resend
-    for resend in longpoll.listen():
+    for resend in longpoll_full.listen():
         UserId1 = resend.object['from_id']
         user1 = str(getUserName(resend.object.from_id))
         PeerId = resend.object.peer_id
@@ -243,11 +246,10 @@ def vk_bot_resend():
                 tb1 =(f"\n_____________________________________________________\n"
                         f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}\n" 
                         f"{'  [   ' + TitleChat + '   ]'}\n")
-
                 if att['type'] == 'photo':  # Если прислали фото
-                    tb1 += (f"{att['photo']['sizes'][-1]['url']}\n"
-                        f"_____________________________________________________")
-                    SendTG(node,tb1)
+                    logging.info(f"{tb1}\n{att['photo']['sizes'][-1]['url']}\n"
+                                 f"_____________________________________________________")
+                    bot.send_photo(node,get(att['photo']['sizes'][-1]['url']).content,tb1)
                 ###########################################################################################
                 elif att['type'] == 'doc':  # Если прислали документ
                     tb1 += (f"{str(att['doc']['url']).replace('no_preview=1', '')}\n"
@@ -259,44 +261,59 @@ def vk_bot_resend():
                         f"\n_____________________________________________________")
                     SendTG(node,tb1)
                 ###########################################################################################
+                elif att['type'] == 'audio':
+                    tb1 += (f"https://vk.com/audio{att['audio']['owner_id']}_{att['audio']['id']}\n")
+                    duration = int(att['audio']['duration'])
+                    info = (f"_____________________________________________________\n"
+                           f"{att['audio']['artist']} - {att['audio']['title']} {att['audio'].get('subtitle', '')}"       
+                           f"\nДлительность:   {str(duration // 60)}:{str(duration % 60)}\n" +
+                           f"_____________________________________________________\n")
+                    logging.info(tb1 + info)
+                    try: bot.send_audio(node,att['audio']['url'],tb1 + info )
+                    except: SendTG(node, tb1 + info)
+                ###########################################################################################
                 elif att['type'] == "link":  # Если прислали ссылку(напиример: на историю)
                     tb1 += (f"\n\n{att['link']['url']}"
                         f"\n_____________________________________________________")
                     SendTG(node,tb1)
             ###########################################################################################
                 elif att['type'] == 'wall':  # Если поделились постом
-                    textbox = textboxFILE = str(f"\n_____________________________________________________\n"
+                    textboxhead = textboxFILE = str(f"\n_____________________________________________________\n"
                                   f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}"
                                   f"\n{' [     ' + TitleChat + '     ]' + ' : '} \n поделился постом :\n"
                                   f"\n\n группа: {att['wall']['from']['name']}"
                                   f"\n\n{att['wall']['text']}")
-                    textbox += str(f"\n_____________________________________________________")
+                    textboxhead += str(f"\n_____________________________________________________")
+                    textboxaudio = ''
                     try:
                         for wall_att in att['wall']['attachments']:
                                 if wall_att['type'] == 'photo':
-                                    bot.send_photo(node,get(f"{wall_att['photo']['sizes'][-1]['url']}").content, textbox)
+                                    bot.send_photo(node,get(f"{wall_att['photo']['sizes'][-1]['url']}").content, textboxhead)
                                     textboxFILE += str(f"\n{wall_att['photo']['sizes'][-1]['url']}\n")
                                 if wall_att['type'] == 'video':
-                                    textbox += str(f"\nhttps://vk.com/video{str(wall_att['video']['owner_id'])}_{str(wall_att['video']['id'])}\n")
+                                    textbox = str(f"\nhttps://vk.com/video{str(wall_att['video']['owner_id'])}_{str(wall_att['video']['id'])}\n")
                                     textboxFILE += str(f"\nhttps://vk.com/video{str(wall_att['video']['owner_id'])}_{str(wall_att['video']['id'])}\n")
-                                    bot.send_message(node, textbox)
+                                    bot.send_message(node,textboxhead + textbox)
                                 if wall_att['type'] == 'doc':
-                                    textbox += str(f"\n{str(wall_att['doc']['url']).replace('no_preview=1', '')}\n")
+                                    textbox = str(f"\n{str(wall_att['doc']['url']).replace('no_preview=1', '')}\n")
                                     textboxFILE += str(f"\n{str(wall_att['doc']['url']).replace('no_preview=1', '')}\n")
-                                    bot.send_message(node, textbox)
+                                    bot.send_message(node, textboxhead + textbox)
                                 if wall_att['type'] == 'link':
-                                    textbox += str(f"\n{str(wall_att['link']['url'])}\n")
+                                    textbox = str(f"\n{str(wall_att['link']['url'])}\n")
                                     textboxFILE += str(f"\n{str(wall_att['link']['url'])}\n")
-                                    bot.send_message(node, textbox)
+                                    bot.send_message(node, textboxhead + textbox)
+                                if wall_att['type'] == 'audio':
+                                    textboxaudio += (f"\nhttps://vk.com/audio{wall_att['audio']['owner_id']}_{wall_att['audio']['id']}\n"
+                                                f"{wall_att['audio']['artist'] + ' - ' + wall_att['audio']['title'] + ' ' + wall_att['audio'].get('subtitle', '')}"
+                                                f"\n{'Длительность: ' + str(int(wall_att['audio']['duration']) // 60)}"
+                                                f"{':' + str(int(wall_att['audio']['duration']) % 60)}")
+                        if textboxaudio != '': SendTG(node,textboxhead + textboxaudio)
                         textboxFILE += str(f"\n_____________________________________________________\n")
                         logging.info(textboxFILE)
-                    except:
-                            bot.send_message(node,textbox)
-                            textboxFILE += str(f"\n_____________________________________________________\n")
-                            logging.info(textboxFILE)
+                    except: SendTG(node,textboxhead)
         ###########################################################################################
             if resend.object.fwd_messages:
-                #try:
+                try:
                     fwdlist = []
                     ug = []
                     tg = []
@@ -315,8 +332,8 @@ def vk_bot_resend():
                     print(f"{ug},' ',{tg}")
                     #fl = [' | ' + str(userg) + ' : ' + str(text) + "\n"]
                     #bot.send_message(node, f"   {fl}\n")
-                #except:
-                    #bot.send_message(node,(f"Ошибка передачи\n{resend.obj.fwd_messages}"))
+                except:
+                    bot.send_message(node,(f"Ошибка передачи\n{resend.obj.fwd_messages}"))
 
         ###########################################################################################
             if  resend.obj.text != "":
@@ -332,11 +349,12 @@ def vk_bot_resend():
 
 ############################ отправка в чат вк из телеги ##################################
 def vkNode():
-    @bot.message_handler(content_types=['text','video','photo','document','animation','sticker'])
+    @bot.message_handler(content_types=['text','video','photo','document','animation','sticker','audio'])
     def TG_VK(message):
         idchat = message.chat.id
         idmessage_start = int(message.message_id)
         msg = message.text
+        time.sleep(1)
         if idchat in reverse_Nodes():
             node = reverse_Nodes().get(idchat)
             ###########################################################################################
@@ -415,17 +433,23 @@ def vkNode():
             ###########################################################################################
             if message.sticker:
                 idsticker = message.sticker.file_id
-                if str((bot.get_file(idsticker)).file_path).split(sep='.')[1] == 'tgs': tgs = '.tgs'
-                else: tgs = '.webp'
-                namesticker = idsticker + tgs
-                write_file(namesticker,bot.download_file((bot.get_file(idsticker)).file_path))
-                if tgs == '.webp': convert_img(namesticker,f"{idsticker}.png","png")
-                if tgs != '.tgs':
+                if str((bot.get_file(idsticker)).file_path).split(sep='.')[1] != 'tgs':
+                    namesticker = idsticker + '.webp'
+                    write_file(namesticker,bot.download_file((bot.get_file(idsticker)).file_path))
+                    convert_img(namesticker,f"{idsticker}.png","png")
                     os.remove(namesticker)
-                    u = upload.document(doc=f"{idsticker}.png", title=str(random.randint(1, 1000000)), group_id=IdGroupVK,to_wall=0)
-                    sticker = "doc" + str(u['doc']['owner_id']) + '_' + str(u['doc']['id']) + '?' + str(u['doc']['url']).split(sep='?')[1].replace('&no_preview=1', '')
+                    u = upload.graffiti(image =f"{idsticker}.png",group_id=IdGroupVK)
+                    sticker = "doc" + str(u['graffiti']['owner_id']) + '_' + str(u['graffiti']['id']) + "_" + str(u['graffiti']['access_key'])
                     logging.info(f"\n{idsticker}.png\n{sticker}\n")
                     vk.messages.send(random_id=random.randint(0, 999999), message='',peer_id=node, attachment=sticker)
                     os.remove(f"{idsticker}.png")
-                else: os.remove(namesticker)
+            if message.audio:
+                idaudio = message.audio.file_id
+                write_file(idaudio + '.mp3',bot.download_file((bot.get_file(idaudio)).file_path))
+                u = vk.docs.getMessagesUploadServer(type='audio_message',peer_id=node)
+                responses = requests.post(u['upload_url'], files={'file': open(idaudio + '.mp3', 'rb')}).json()
+                w = vk.docs.save(file=responses['file'])
+                msg_voice = "doc" + str(w['audio_message']['owner_id']) + '_' + str(w['audio_message']['id'])
+                vk.messages.send(random_id=random.randint(0, 999999), message='', peer_id=node, attachment=msg_voice)
+                os.remove(f"{idaudio}.mp3")
     bot.polling(none_stop=True, interval=0)
