@@ -86,15 +86,6 @@ def SendTG(adress,TB):
     bot.send_message(adress, TB)
     logging.info(TB)
 
-#def GET_CHAT_LIST():
-#    get_items_chat = vk.messages.getConversationsById(peer_ids=respondent.object.peer_id)
-#    CHAT_LIST = []
-#    for chats in get_items_chat['items']:
-#        chat_local_id = chats['peer']['local_id']
-#        if chat_local_id > 0:
-#                CHAT_LIST.append(chat_local_id)
-#    return CHAT_LIST
-
 def GET_CHAT_TITLE(object):
     get_items_chat = vk.messages.getConversationsById(peer_ids=object)
     for chats in get_items_chat['items']:
@@ -198,10 +189,6 @@ def vk_bot_respondent():
             '/clear_docs_init' : clear_docs(), #очистка доков в группе
             f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
         }
-        #command_attachments = {
-        #    '/мем' : get_album_photo(),
-        #    '/cabal:kill_all_members=active': KILL_ALL_MEMBERS(peerID),
-        #}
         ############################### Обработка ######################################
         if respondent.type == VkBotEventType.MESSAGE_NEW:
             i = i + 1
@@ -215,7 +202,7 @@ def vk_bot_respondent():
                 for element1 in TextDictSplitLines:
                     key1 = command_service.get(element1)
                     if key1 is not None: send(key1)
-            ################## Выбор значения по ключу из command_attachments ##################
+
             elif TEXT == '/мем' : get_album_photo()
             elif TEXT == '/cabal:kill_all_members=active': KILL_ALL_MEMBERS(peerID)
             elif TEXT and i % count_period == 0 :
@@ -245,7 +232,7 @@ def vk_bot_resend():
             for att in resend.obj.attachments:
                 tb1 =(f"\n_____________________________________________________\n"
                         f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}\n" 
-                        f"{'  [   ' + TitleChat + '   ]'}\n")
+                        f"{'  [   ' + str(TitleChat) + '   ]'}\n")
                 if att['type'] == 'photo':  # Если прислали фото
                     logging.info(f"{tb1}\n{att['photo']['sizes'][-1]['url']}\n"
                                  f"_____________________________________________________")
@@ -280,7 +267,7 @@ def vk_bot_resend():
                 elif att['type'] == 'wall':  # Если поделились постом
                     textboxhead = textboxFILE = str(f"\n_____________________________________________________\n"
                                   f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}"
-                                  f"\n{' [     ' + TitleChat + '     ]' + ' : '} \n поделился постом :\n"
+                                  f"\n{' [     ' + str(TitleChat) + '     ]' + ' : '} \n поделился постом :\n"
                                   f"\n\n группа: {att['wall']['from']['name']}"
                                   f"\n\n{att['wall']['text']}")
                     textboxhead += str(f"\n_____________________________________________________")
@@ -319,7 +306,7 @@ def vk_bot_resend():
                     tg = []
                     FwdTextBox = (f"_____________________________________\n"
                                   f"{user1} из чата {resend.object.peer_id  }  \n"
-                                  f"\n{' [     ' + TitleChat + '     ]' + ' : '} \n переслал :\n"
+                                  f"\n{' [     ' + str(TitleChat) + '     ]' + ' : '} \n переслал :\n"
                                   f"_____________________________________\n")
                     for fwd in resend.object.fwd_messages:
                         fg = fwd.get('fwd_messages')
@@ -337,9 +324,9 @@ def vk_bot_resend():
 
         ###########################################################################################
             if  resend.obj.text != "":
-                texts = (f"\n{user1 +'( https://vk.com/id' + str(UserId1) + ' ) ' }"
+                texts = (f"\n{str(user1) +'( https://vk.com/id' + str(UserId1) + ' ) ' }"
                         f"{' Из чата (' + str(resend.obj.peer_id) + ')'}" 
-                        f"\n{'[     ' + TitleChat + '     ]' + ' : '}\n"
+                        f"\n{'[     ' + str(TitleChat) + '     ]' + ' : '}\n"
                         f"_____________________________________\n"
                         f"\n{resend.object['text']}\n" 
                         f"_____________________________________\n\n")
