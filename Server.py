@@ -267,10 +267,18 @@ def vk_bot_resend():
                 elif att['type'] == 'wall':  # Если поделились постом
                     textboxhead = textboxFILE = str(f"\n_____________________________________________________\n"
                                   f"{user1 + '  из чата : ' + str(resend.obj.peer_id)}"
-                                  f"\n{' [     ' + str(TitleChat) + '     ]' + ' : '} \n поделился постом :\n"
-                                  f"\n\n группа: {att['wall']['from']['name']}"
-                                  f"\n\n{att['wall']['text']}")
-                    textboxhead += str(f"\n_____________________________________________________")
+                                  f"\n{' [     ' + str(TitleChat) + '     ]' + ' : '} \n поделился постом :\n")
+                    frm = att['wall']['from']
+                    ag = frm.get('name',0)
+                    ug = frm.get('first_name',0)
+                    print(ag , '\n' , ug)
+                    if ag == 0:
+                        textboxhead += (f"\n\n Пользовтель: {att['wall']['from']['first_name']}"
+                                        f" {att['wall']['from']['last_name']}")
+                    if ug == 0:
+                        textboxhead += f"\n\n группа: {att['wall']['from']['name']}"
+                    textboxhead += str(f"\n\n{att['wall']['text']}"
+                        f"\n_____________________________________________________")
                     textboxaudio = ''
                     try:
                         for wall_att in att['wall']['attachments']:
