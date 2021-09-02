@@ -171,7 +171,6 @@ def KILL_ALL_MEMBERS(object):
     for member in list_members:
         kick(chat_id= object - 2000000000, member_id=member)
 
-
 ################################### вк бот ################################################
 def vk_bot_respondent():
     global i, respondent , peerID
@@ -238,8 +237,8 @@ def vk_bot_resend():
                     else: tb1 += f"\nЛичное сообщение от пользователя\n {str(user1)} \n"
             ###########################################################################################
                     if att['type'] == 'photo':  # Если прислали фото
-                        logging.info(f"{tb1}\n{att['photo']['sizes'][-1]['url']}\n_____________________________________________________")
-                        bot.send_photo(node,get(att['photo']['sizes'][-1]['url']).content,tb1)
+                        logging.info(f"{tb1}\n{att['photo']['sizes'][-5]['url']}\n_____________________________________________________")
+                        bot.send_photo(node,get(att['photo']['sizes'][-5]['url']).content,tb1)
                 ###########################################################################################
                     elif att['type'] == 'doc':  # Если прислали документ
                         tb1 += (f"{str(att['doc']['url']).replace('no_preview=1', '')}\n_____________________________________________________")
@@ -308,6 +307,15 @@ def vk_bot_resend():
                     texts += f"_____________________________________\n\n{TEXT}\n_____________________________________\n\n"
                     SendTG(node,texts)
                 elif TEXT == "": None
+        if resend.object.action is not None:
+            if resend.object.action['type'] == 'chat_kick_user':
+                SendTG(node,f"⚠⚠⚠УДАЛЕН {str(getUserName(resend.object.action['member_id']))}⚠⚠⚠")
+            elif resend.object.action['type'] == 'chat_invite_user':
+                SendTG(node,f"⚠⚠⚠ДОБАВЛЕН {str(getUserName(resend.object.action['member_id']))}⚠⚠⚠")
+            elif resend.object.action['type'] == 'chat_invite_user_by_link':
+                SendTG(node, f"⚠⚠⚠ПРИГЛАШЕН ПО ССЫЛКЕ {str(getUserName(resend.object.action['member_id']))}⚠⚠⚠")
+            elif resend.object.action['type'] == 'chat_title_update':
+                SendTG(node, f"⚠⚠⚠Обновлено название чата {str(resend.object.action['text'])}⚠⚠⚠")
 
 ############################ отправка в чат вк из телеги ##################################
 def vkNode():
