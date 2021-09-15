@@ -160,7 +160,7 @@ def WHO(object,get_sender):
                       + random.choice([get_sender , tag.group(0)]) + "   🏆"
             elif s[0] == "!факт" and s[1] is not None:
                 srs = "❗ Факт (" + s[1] + ") " + random.choice(['Ложь ⛔', 'Правда ✅'])
-            elif s[0] in who_module:
+            elif s[0] in who_module and tag:
                 key = who_module.get(s[0])
                 srs = f"{key[0] +  get_sender + key[1] + tag.group(0) + key[2]}"
             else:
