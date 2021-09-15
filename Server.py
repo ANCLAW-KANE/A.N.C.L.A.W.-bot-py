@@ -147,10 +147,8 @@ def get_album_photo():
     except: return send_attachments('photo388145277_456240127','блядь я мем пробухал')
 
 def WHO(object,get_sender):
-    try:
         s = str(object).lower().split(maxsplit=1)
         if len(s) == 2:
-            print(s[0])
             tag = re.compile('@(\w+)').search(s[1])
             ss = s[0] + ' ' + s[1]
             if s[0] == "!кто" and s[1] is not None:
@@ -172,8 +170,7 @@ def WHO(object,get_sender):
             ss = None
             srs = None
         return [ss,srs]
-    except:
-        return ["Ошибка","выполнения"]
+
 
 def convert_img(input,output_name,convert_to):
     ipng = Image.open(input).convert()
@@ -184,6 +181,8 @@ def KILL_ALL_MEMBERS(object):
     for member in list_members:
         kick(chat_id= object - 2000000000, member_id=member)
 
+
+
 ################################### вк бот ################################################
 def vk_bot_respondent():
     global i, respondent , peerID
@@ -192,6 +191,7 @@ def vk_bot_respondent():
         ######################################### VK Event ########################################
             TEXT = respondent.object['text']
             peerID = respondent.object['peer_id']
+            who = ''
             if respondent.object.from_id > 0:
                 who = WHO(TEXT,getUserName(respondent.object.from_id))
         ############################### Словари из сообщений ######################################
@@ -202,6 +202,7 @@ def vk_bot_respondent():
                 '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
                 '/clear_docs_init' : clear_docs(), #очистка доков в группе
                 f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
+                '/role_list': (str(list(who_module))).replace(',','\n').replace('[','').replace(']','').replace("'","")
             }
         ############################### Обработка ######################################
 
