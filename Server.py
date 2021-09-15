@@ -6,7 +6,8 @@ from vk_api import VkApi , audio
 from respondent import new_message_rand
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes ,\
-    count_period , command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,PEER_CRUSH_EVENT,full_permission_user_token
+    count_period , command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,\
+    PEER_CRUSH_EVENT,full_permission_user_token,who_module
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -15,6 +16,13 @@ logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(
                     datefmt='%m.%d.%Y %H:%M:%S', level=logging.INFO)
 ################ Служебные переменные #####################
 i = 0
+
+tab = {
+    'chat_kick_user': '⚠⚠⚠УДАЛЕН',
+    'chat_invite_user': '⚠⚠⚠ДОБАВЛЕН',
+    'chat_invite_user_by_link': '⚠⚠⚠ПРИГЛАШЕН ПО ССЫЛКЕ',
+}
+
 
 ################### Авторизация ###########################
 bot = telebot.TeleBot(teletoken)
@@ -139,28 +147,33 @@ def get_album_photo():
     except: return send_attachments('photo388145277_456240127','блядь я мем пробухал')
 
 def WHO(object,get_sender):
-    s = str(object).lower().split(maxsplit=1)
-    if len(s) == 2:
-        tag = re.compile('@(\w+)').search(s[1])
-        if s[0] == "!кто" and s[1] is not None:
+    try:
+        s = str(object).lower().split(maxsplit=1)
+        if len(s) == 2:
+            print(s[0])
+            tag = re.compile('@(\w+)').search(s[1])
             ss = s[0] + ' ' + s[1]
-            srs = "❓ ➡➡➡  " + RandomMember() + '  ⬅⬅⬅  :  ' + s[1]
-        elif s[0] == "!вероятность" and s[1] is not None:
-            ss = s[0] + ' ' + s[1]
-            srs = "📊 Вероятность для  (" + s[1] + ') : ' + str(random.randint(0,100)) +'%'
-        elif s[0] == "!забив" and tag:
-            ss = s[0] + ' ' + s[1]
-            srs = "📣🐖   Забив : \n\n"+ "🇺🇦" + get_sender + "🇺🇦        🆚        ✡" + s[1] + '✡\n\n🏆   Победил: ' + random.choice([get_sender , tag.group(0)]) + "   🏆"
-        elif s[0] == "!факт" and s[1] is not None:
-            ss = s[0] + ' ' + s[1]
-            srs = "❗ Факт (" + s[1] + ") " + random.choice(['Ложь ⛔', 'Правда ✅'])
+            if s[0] == "!кто" and s[1] is not None:
+                srs = "❓ ➡➡➡  " + RandomMember() + '  ⬅⬅⬅  :  ' + s[1]
+            elif s[0] == "!вероятность" and s[1] is not None:
+                srs = "📊 Вероятность для  (" + s[1] + ') : ' + str(random.randint(0,100)) +'%'
+            elif s[0] == "!забив" and tag:
+                srs = "📣🐖   Забив : \n\n"+ "🇺🇦" + get_sender + "🇺🇦        🆚        ✡" + s[1] + '✡\n\n🏆   Победил: ' \
+                      + random.choice([get_sender , tag.group(0)]) + "   🏆"
+            elif s[0] == "!факт" and s[1] is not None:
+                srs = "❗ Факт (" + s[1] + ") " + random.choice(['Ложь ⛔', 'Правда ✅'])
+            elif s[0] in who_module:
+                key = who_module.get(s[0])
+                srs = f"{key[0] +  get_sender + key[1] + tag.group(0) + key[2]}"
+            else:
+                ss = None
+                srs = None
         else:
             ss = None
             srs = None
-    else:
-        ss = None
-        srs = None
-    return [ss,srs]
+        return [ss,srs]
+    except:
+        return ["Ошибка","выполнения"]
 
 def convert_img(input,output_name,convert_to):
     ipng = Image.open(input).convert()
@@ -179,7 +192,8 @@ def vk_bot_respondent():
         ######################################### VK Event ########################################
             TEXT = respondent.object['text']
             peerID = respondent.object['peer_id']
-            who = WHO(TEXT,getUserName(respondent.object.from_id))
+            if respondent.object.from_id > 0:
+                who = WHO(TEXT,getUserName(respondent.object.from_id))
         ############################### Словари из сообщений ######################################
             TextSplitLowerDict = set(str(TEXT).lower().split())
             TextDictSplitLines = set(str(TEXT).lower().splitlines())
@@ -215,7 +229,7 @@ def vk_bot_respondent():
 ############################ отправка в чат телеги из вк ##################################
 
 def vk_bot_resend():
-    global i, resend, PeerId, user1, UserId1, TitleChat
+    global i, resend, PeerId, user, UserId, TitleChat
     for resend in longpoll_full.listen():
         ########################## Распределение точек отправки ###############################
         if resend.object.peer_id in Nodes: node = Nodes.get(resend.object.peer_id)
@@ -225,20 +239,20 @@ def vk_bot_resend():
             vk.messages.send(random_id=random.randint(0, 999999), message="Поток 2 активен", peer_id=resend.obj.peer_id)
         ################################## Обработчик #########################################
         if resend.type == VkBotEventType.MESSAGE_NEW:
-            UserId1 = resend.object['from_id']
-            user1 = str(getUserName(resend.object.from_id))
+            UserId = resend.object['from_id']
+            user = str(getUserName(UserId))
             PeerId = resend.object.peer_id
             TEXT = resend.obj.text
             if PeerId > 2000000000:TitleChat = GET_CHAT_TITLE(PeerId)
             if resend.object['from_id'] > 0:
                 for att in resend.obj.attachments:
                     tb1 =f"\n_____________________________________________________\n"
-                    if PeerId > 2000000000:tb1 += f"{user1 + '  из чата : ' + str(PeerId)}\n{'  [   ' + str(TitleChat) + '   ]'}\n"
-                    else: tb1 += f"\nЛичное сообщение от пользователя\n {str(user1)} \n"
+                    if PeerId > 2000000000:tb1 += f"{user + '  из чата : ' + str(PeerId)}\n{'  [   ' + str(TitleChat) + '   ]'}\n"
+                    else: tb1 += f"\nЛичное сообщение от пользователя\n {str(user)} \n"
             ###########################################################################################
                     if att['type'] == 'photo':  # Если прислали фото
-                        logging.info(f"{tb1}\n{att['photo']['sizes'][-5]['url']}\n_____________________________________________________")
-                        bot.send_photo(node,get(att['photo']['sizes'][-5]['url']).content,tb1)
+                            logging.info(f"{tb1}\n{att['photo']['sizes'][-1]['url']}\n_____________________________________________________")
+                            bot.send_photo(node, get(att['photo']['sizes'][-1]['url']).content, tb1)
                 ###########################################################################################
                     elif att['type'] == 'doc':  # Если прислали документ
                         tb1 += (f"{str(att['doc']['url']).replace('no_preview=1', '')}\n_____________________________________________________")
@@ -263,14 +277,20 @@ def vk_bot_resend():
                         SendTG(node,tb1)
             ###########################################################################################
                     elif att['type'] == 'wall':  # Если поделились постом
+                        ############################## Определение происхождения поста (юзер или группа)#########################
                         if PeerId > 2000000000:
                             textboxhead = textboxFILE = f"\n_____________________________________________________\n"
-                            f"{user1 + '  из чата : ' + str(PeerId)}\n{' [     ' + str(TitleChat) + '     ]' + ' : '} \n поделился постом :\n"
-                        else: textboxhead = textboxFILE = f"\n_____________________________________________________\n{user1} поделился постом :\n"
+                            f"{user + '  из чата : ' + str(PeerId)}\n{' [     ' + str(TitleChat) + '     ]' + ' : '} \n поделился постом :\n"
+                        else:
+                            textboxhead = textboxFILE = f"\n_____________________________________________________\n{user} поделился постом :\n"
+                        ######################################## Имя источника ################################################
                         frm = att['wall']['from']
                         ag = frm.get('name',0)
-                        if ag == 0: textboxhead += f"\n\n Пользовтель: {att['wall']['from']['first_name']} {att['wall']['from']['last_name']}"
-                        else: textboxhead += f"\n\n группа: {att['wall']['from']['name']}"
+                        if ag == 0:
+                            textboxhead += f"\n\n Пользовтель: {att['wall']['from']['first_name']} {att['wall']['from']['last_name']}"
+                        else:
+                            textboxhead += f"\n\n группа: {att['wall']['from']['name']}"
+                        ###########################################################################################
                         textboxhead += str(f"\n\n{att['wall']['text']}\n_____________________________________________________")
                         textboxaudio = ''
                         try:
@@ -295,25 +315,24 @@ def vk_bot_resend():
                                                 f"{wall_att['audio']['artist'] + ' - ' + wall_att['audio']['title'] + ' ' + wall_att['audio'].get('subtitle', '')}"
                                                 f"\n{'Длительность: ' + str(int(wall_att['audio']['duration']) // 60)}"
                                                 f"{':' + str(int(wall_att['audio']['duration']) % 60)}")
-                                    if textboxaudio != '': SendTG(node,textboxhead + textboxaudio)
+                            if textboxaudio != '':
+                                SendTG(node,textboxhead + textboxaudio)
                             textboxFILE += f"\n_____________________________________________________\n"
                             logging.info(textboxFILE)
-                        except: SendTG(node,textboxhead)
-        ###########################################################################################
+                        except:
+                            SendTG(node,textboxhead)
         ###########################################################################################
                 if TEXT != "":
-                    texts = f"\n{str(user1) +'( https://vk.com/id' + str(UserId1) + ' ) ' }"
-                    if PeerId > 2000000000: texts += f"{' Из чата (' + str(PeerId) + ')'}\n{'[     ' + str(TitleChat) + '     ]' + ' : '}\n"
+                    texts = f"\n{str(user) +'( https://vk.com/id' + str(UserId) + ' ) ' }"
+                    if PeerId > 2000000000:
+                        texts += f"{' Из чата (' + str(PeerId) + ')'}\n{'[     ' + str(TitleChat) + '     ]' + ' : '}\n"
                     texts += f"_____________________________________\n\n{TEXT}\n_____________________________________\n\n"
                     SendTG(node,texts)
-                elif TEXT == "": None
+        ################################# Обработка событий чата ###################################
         if resend.object.action is not None:
-            if resend.object.action['type'] == 'chat_kick_user':
-                SendTG(node,f"⚠⚠⚠УДАЛЕН {str(getUserName(resend.object.action['member_id']))}⚠⚠⚠")
-            elif resend.object.action['type'] == 'chat_invite_user':
-                SendTG(node,f"⚠⚠⚠ДОБАВЛЕН {str(getUserName(resend.object.action['member_id']))}⚠⚠⚠")
-            elif resend.object.action['type'] == 'chat_invite_user_by_link':
-                SendTG(node, f"⚠⚠⚠ПРИГЛАШЕН ПО ССЫЛКЕ {str(getUserName(resend.object.action['member_id']))}⚠⚠⚠")
+            if resend.object.action['type'] in tab:
+                key = tab.get(resend.object.action['type'])
+                SendTG(node,f"{ key + str(getUserName(resend.object.action['member_id']))}⚠⚠⚠")
             elif resend.object.action['type'] == 'chat_title_update':
                 SendTG(node, f"⚠⚠⚠Обновлено название чата {str(resend.object.action['text'])}⚠⚠⚠")
 
@@ -332,15 +351,18 @@ def vkNode():
                 idmessage = int(message.message_id) - 1
                 if msg and not message.forward_from and not message.forward_sender_name:
                     last_name = message.from_user.last_name
-                    if last_name is None: last_name = ''
+                    if last_name is None:
+                        last_name = ''
                     msgtg = str(message.from_user.first_name) + ' ' + last_name + ' : ' + msg
                     vk.messages.send(random_id=idmessage, message=msgtg, peer_id=node)
                 if idmessage < idmessage_start:
                     if message.forward_from:
                         time.sleep(1)
                         last_name_fwd = message.forward_from.last_name
-                        if msg is None: msg = ''
-                        if last_name_fwd is None: last_name_fwd = ''
+                        if msg is None:
+                            msg = ''
+                        if last_name_fwd is None:
+                            last_name_fwd = ''
                         user = str(message.forward_from.first_name) + ' ' + str(last_name_fwd)
                         vk.messages.send(random_id=idmessage, message=' От  ' + user + "\n " + str(msg),peer_id=node)
                     if message.forward_sender_name:
@@ -373,7 +395,8 @@ def vkNode():
                 try:
                     iddocument = message.document.file_id
                     captiondocument = message.caption
-                    if captiondocument is None: captiondocument = ''
+                    if captiondocument is None:
+                        captiondocument = ''
                     sep = str(message.document.mime_type).split(sep='/')[1]
                     if sep == 'mp4':
                         namedocument = iddocument + '.' + sep
@@ -384,13 +407,16 @@ def vkNode():
                         vk.messages.send(random_id=random.randint(0, 999999), message=captiondocument, peer_id=node,attachment=animation)
                     else:
                     ############################### распределение MIME типов ##################################
-                        if sep in types: sepget = types.get(sep)
-                        else: sepget = 'test'
+                        if sep in types:
+                            sepget = types.get(sep)
+                        else:
+                            sepget = 'test'
                     ###########################################################################################
                         namedocument = iddocument + '.' + sepget
                         write_file(namedocument, bot.download_file((bot.get_file(iddocument)).file_path))
                         mtpsget = mtps.guess_extension(message.document.mime_type)
-                        if mtpsget is None: mtpsget = (magic.Magic(mime=True)).from_file(namedocument)
+                        if mtpsget is None:
+                            mtpsget = (magic.Magic(mime=True)).from_file(namedocument)
                         u = upload.document(doc=namedocument,title=str(random.randint(1,1000000)),group_id=IdGroupVK,to_wall=0)
                         document = "doc"+str(u['doc']['owner_id']) + '_' + str(u['doc']['id']) + '?' + str(u['doc']['url']).split(sep='?')[1].replace('&no_preview=1','')
                         logging.info(f"\n{namedocument}\n{document}\n")
