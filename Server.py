@@ -185,13 +185,12 @@ def KILL_ALL_MEMBERS(object):
 
 ################################### вк бот ################################################
 def vk_bot_respondent():
-    global i, respondent , peerID
+    global i, respondent , peerID, who
     for respondent in longpoll.listen():
         if respondent.type == VkBotEventType.MESSAGE_NEW:
         ######################################### VK Event ########################################
             TEXT = respondent.object['text']
             peerID = respondent.object['peer_id']
-            who = ''
             if respondent.object.from_id > 0:
                 who = WHO(TEXT,getUserName(respondent.object.from_id))
         ############################### Словари из сообщений ######################################
