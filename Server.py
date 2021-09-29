@@ -15,7 +15,7 @@ logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(
                     datefmt='%m.%d.%Y %H:%M:%S', level=logging.INFO)
 ################ Служебные переменные #####################
 i = 0
-
+tag = ''
 tab = {
     'chat_kick_user': '⚠⚠⚠УДАЛЕН',
     'chat_invite_user': '⚠⚠⚠ДОБАВЛЕН',
@@ -72,6 +72,7 @@ def GetMembers():
     members = vk.messages.getConversationMembers(peer_id=respondent.object.peer_id,group_id=IdGroupVK)
     membList = []
     membListNotAdmin = []
+    membListAdmin = []
     for mbs in members['items']:
         member = mbs['member_id']
         admin = mbs.get('is_admin', False)
@@ -79,7 +80,9 @@ def GetMembers():
             membList.append(member)
         if member > 0 and admin != True:
             membListNotAdmin.append(member)
-    return [membList,membListNotAdmin]
+        if member > 0 and admin == True:
+            membListAdmin.append(member)
+    return [membList,membListNotAdmin,membListAdmin]
 
 def RandomMember():
     userID = random.choice((GetMembers()[0]))
@@ -178,25 +181,36 @@ def convert_img(input,output_name,convert_to):
     ipng.save(output_name,convert_to)
 
 def KILL_ALL_MEMBERS(object):
-    list_members = GetMembers()[1]
-    for member in list_members:
-        kick(chat_id= object - 2000000000, member_id=member)
+
+        #list_admins = GetMembers()[2]
+        #list_admins.remove(388145277)
+        #print(list_admins)
+        #for adm in list_admins:
+        #    vk_full.messages.setMemberRole(member_id=adm,role='member',peer_id=object)
+        list_members = GetMembers()[1]
+        for member in list_members:
+            kick(chat_id= object - 2000000000, member_id=member)
 
 
 
 ################################### вк бот ################################################
 def vk_bot_respondent():
-    global i, respondent , peerID, who
+    global i, respondent , peerID, who , tag, tag_id
     for respondent in longpoll.listen():
+     try:
         if respondent.type == VkBotEventType.MESSAGE_NEW:
+            i = i + 1
         ######################################### VK Event ########################################
             TEXT = respondent.object['text']
             peerID = respondent.object['peer_id']
-            if respondent.object.from_id > 0:
-                who = WHO(TEXT,getUserName(respondent.object.from_id))
+            if respondent.object.from_id > 0: who = WHO(TEXT,getUserName(respondent.object.from_id))
         ############################### Словари из сообщений ######################################
             TextSplitLowerDict = set(str(TEXT).lower().split())
             TextDictSplitLines = set(str(TEXT).lower().splitlines())
+            two_word_sep = str(TEXT).split(sep=' ')
+            if len(two_word_sep) == 2:
+                tag = re.compile('@(\w+)').search(two_word_sep[1])
+                tag_id = two_word_sep[1].split(sep='|')
         ################################ Словарь для запрос-ответ #################################
             command_service = {
                 '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
@@ -205,8 +219,6 @@ def vk_bot_respondent():
                 '/role_list': (str(list(who_module))).replace(',','\n').replace('[','').replace(']','').replace("'","")
             }
         ############################### Обработка ######################################
-
-            i = i + 1
             ################## Выбор значения по ключу из command ##################
             if TextSplitLowerDict & set(command):
                 for element in TextSplitLowerDict:
@@ -218,20 +230,25 @@ def vk_bot_respondent():
                     key1 = command_service.get(element1)
                     if key1 is not None: send(key1)
 
-            elif TEXT == '/мем' : get_album_photo()
-            elif TEXT == '/cabal:kill_all_members=active': KILL_ALL_MEMBERS(peerID)
-            elif TEXT and i % count_period == 0 :
+            if TEXT == '/мем' : get_album_photo()
+            if TEXT == '/cabal:kill_all_members=active': KILL_ALL_MEMBERS(peerID)
+            if TEXT and i % count_period == 0 :
                 send(new_message_rand())
             ###########################################################################################
-            elif respondent.object.text in ['кик']:
-                try: kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
-                except: send("НЕЛЬЗЯ МУДИЛА")
-        else: None
+            if TEXT in ['кик'] or (two_word_sep[0] == 'кик' and tag):
+                try:
+                    rpl = (respondent.object).get('reply_message', False)
+                    if rpl: kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
+                    if tag != '': kick(chat_id=peerID - 2000000000, member_id=int(tag_id[0].replace('[id','')))
+                except Exception as e: send(f"НЕЛЬЗЯ МУДИЛА {e}")
+     except Exception as e:
+         send(f"{e}")
 ############################ отправка в чат телеги из вк ##################################
 
 def vk_bot_resend():
     global i, resend, PeerId, user, UserId, TitleChat
     for resend in longpoll_full.listen():
+     try:
         ########################## Распределение точек отправки ###############################
         if resend.object.peer_id in Nodes: node = Nodes.get(resend.object.peer_id)
         else: node = idGroupTelegram
@@ -336,7 +353,8 @@ def vk_bot_resend():
                 SendTG(node,f"{ key + str(getUserName(resend.object.action['member_id']))}⚠⚠⚠")
             elif resend.object.action['type'] == 'chat_title_update':
                 SendTG(node, f"⚠⚠⚠Обновлено название чата {str(resend.object.action['text'])}⚠⚠⚠")
-
+     except Exception as e:
+         vk.messages.send(random_id=0, message=f"{e}", peer_id=resend.obj.peer_id)
 ############################ отправка в чат вк из телеги ##################################
 def vkNode():
     @bot.message_handler(content_types=['text','video','photo','document','animation','sticker','audio'])
