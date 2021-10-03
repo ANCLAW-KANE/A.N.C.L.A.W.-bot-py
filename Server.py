@@ -17,9 +17,9 @@ logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(
 i = 0
 tag = ''
 tab = {
-    'chat_kick_user': '⚠⚠⚠УДАЛЕН',
-    'chat_invite_user': '⚠⚠⚠ДОБАВЛЕН',
-    'chat_invite_user_by_link': '⚠⚠⚠ПРИГЛАШЕН ПО ССЫЛКЕ',
+    'chat_kick_user': '⚠⚠⚠ УДАЛЕН',
+    'chat_invite_user': '⚠⚠⚠ ДОБАВЛЕН',
+    'chat_invite_user_by_link': '⚠⚠⚠ ПРИГЛАШЕН ПО ССЫЛКЕ',
 }
 
 
@@ -47,11 +47,8 @@ longpoll_full = VkBotLongPoll(vk_session_full, IdGroupVK)
 upload = vk_api.VkUpload(vk_full)
 api_audio = vk_api.audio.VkAudio(vk_session_full)
 ################################## Блок функций #######################################
-def new_message_rand():
-    return random.choice(a)
-
 def kick( chat_id, member_id):
-    vk.messages.removeChatUser(chat_id=chat_id, member_id=member_id)
+    vk.messages.removeChatUser(chat_id=chat_id, user_id=member_id,member_id=member_id)
 
 def send(msg):
     vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=respondent.object.peer_id)
@@ -136,19 +133,19 @@ def get_list_album():
             listAlbum.append(album+'_'+size)
     return listAlbum
 
-def get_album_photo():
-    try:
-        parse_album = str(random.choice(get_list_album())).split(sep='_')
-        if parse_album[1] == '0': parse_album = str(random.choice(get_list_album())).split(sep='_')
-        if int(parse_album[1]) > 50: offset_max = math.floor(int(parse_album[1]) / 50)
-        else: offset_max = 0
-        alb_ph = vk_user.photos.get(owner_id=OWNER_ALBUM_PHOTO, album_id=parse_album[0], count=50 , offset=random.randint(0,offset_max) * 50)
-        photoList = []
-        for photo in alb_ph['items']:
-            idphoto = str(photo['id'])
-            photoList.append(idphoto)
-        if photoList is not None: return send_attachments(f"photo{str(OWNER_ALBUM_PHOTO)}_{random.choice(photoList)}",'')
-    except: return send_attachments('photo388145277_456240127','блядь я мем пробухал')
+def get_album_photos_mem():
+        try:
+            offset_max = 0
+            parse_album = str(random.choice(get_list_album())).split(sep='_')
+            if int(parse_album[1]) > 50: offset_max = math.floor(int(parse_album[1]) / 50)
+            if parse_album[1] != '0':
+                alb_ph = vk_user.photos.get(owner_id=OWNER_ALBUM_PHOTO, album_id=parse_album[0], count=50 , offset=random.randint(0,offset_max) * 50)
+                photoList = []
+                for photo in alb_ph['items']:
+                    idphoto = str(photo['id'])
+                    photoList.append(idphoto)
+                if photoList is not None: return send_attachments(f"photo{str(OWNER_ALBUM_PHOTO)}_{random.choice(photoList)}",'')
+        except Exception as e : return send_attachments('photo388145277_456240127',f'блядь я мем пробухал\n {e}')
 
 def WHO(object,get_sender):
         s = str(object).lower().split(maxsplit=1)
@@ -175,74 +172,71 @@ def WHO(object,get_sender):
             srs = None
         return [ss,srs]
 
-
 def convert_img(input,output_name,convert_to):
     ipng = Image.open(input).convert()
     ipng.save(output_name,convert_to)
 
-def KILL_ALL_MEMBERS(object):
-
-        #list_admins = GetMembers()[2]
-        #list_admins.remove(388145277)
-        #print(list_admins)
-        #for adm in list_admins:
-        #    vk_full.messages.setMemberRole(member_id=adm,role='member',peer_id=object)
+def KILL_ALL_MEMBERS():
         list_members = GetMembers()[1]
         for member in list_members:
-            kick(chat_id= object - 2000000000, member_id=member)
+            kick(chat_id= respondent.object['peer_id'] - 2000000000, member_id=member)
 
-
+def manager_kick():
+    two_word_sep = str(respondent.object['text']).split(sep=' ',maxsplit=1)
+    try:
+        if len(two_word_sep) == 2:
+            tag = re.compile('@(\w+)').search(two_word_sep[1])
+            tag_id = two_word_sep[1].split(sep='|')[0].replace('[id', '')
+            if two_word_sep[0] == '/кик' and tag:  kick(chat_id=peerID - 2000000000, member_id=int(tag_id))
+        else:
+            rpl = (respondent.object).get('reply_message', False)
+            if rpl:  kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
+    except Exception as e:
+         send(f"НЕЛЬЗЯ МУДИЛА \n{e}")
 
 ################################### вк бот ################################################
 def vk_bot_respondent():
     global i, respondent , peerID, who , tag, tag_id
     for respondent in longpoll.listen():
-     try:
-        if respondent.type == VkBotEventType.MESSAGE_NEW:
-            i = i + 1
+        try:
+            if respondent.type == VkBotEventType.MESSAGE_NEW:
+                i = i + 1
         ######################################### VK Event ########################################
-            TEXT = respondent.object['text']
-            peerID = respondent.object['peer_id']
-            if respondent.object.from_id > 0: who = WHO(TEXT,getUserName(respondent.object.from_id))
-        ############################### Словари из сообщений ######################################
-            TextSplitLowerDict = set(str(TEXT).lower().split())
-            TextDictSplitLines = set(str(TEXT).lower().splitlines())
-            two_word_sep = str(TEXT).split(sep=' ')
-            if len(two_word_sep) == 2:
-                tag = re.compile('@(\w+)').search(two_word_sep[1])
-                tag_id = two_word_sep[1].split(sep='|')
-        ################################ Словарь для запрос-ответ #################################
-            command_service = {
+                TEXT = respondent.object['text']
+                peerID = respondent.object['peer_id']
+                if respondent.object.from_id > 0: who = WHO(TEXT,getUserName(respondent.object.from_id))
+                TextSplitLowerDict = set(str(TEXT).lower().split())
+        ################################ Словари для запрос-ответ #################################
+                command_service_text = {
                 '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
                 '/clear_docs_init' : clear_docs(), #очистка доков в группе
                 f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
-                '/role_list': (str(list(who_module))).replace(',','\n').replace('[','').replace(']','').replace("'","")
-            }
+                '/role_list': (str(list(who_module))).replace(',','\n').replace('[','').replace(']','').replace("'",""),
+                }
+                command_service_func = {
+                    '/кик': manager_kick,
+                    '/мем': get_album_photos_mem,
+                    '/cabal:kill_all_members=active': KILL_ALL_MEMBERS,
+                }
         ############################### Обработка ######################################
             ################## Выбор значения по ключу из command ##################
-            if TextSplitLowerDict & set(command):
-                for element in TextSplitLowerDict:
-                    key = command.get(element)
-                    if key is not None: send(key)
-            ################## Выбор значения по ключу из command_service ##################
-            elif TextDictSplitLines & set(command_service):
-                for element1 in TextDictSplitLines:
-                    key1 = command_service.get(element1)
+                if TextSplitLowerDict & set(command):
+                    for element in TextSplitLowerDict:
+                        key = command.get(element)
+                        if key is not None: send(key)
+            ################## Выбор значения по ключу из command_service (команды функций с возвратом текста) ##################
+                elif TEXT in command_service_text:
+                    key1 = command_service_text.get(TEXT)
                     if key1 is not None: send(key1)
-
-            if TEXT == '/мем' : get_album_photo()
-            if TEXT == '/cabal:kill_all_members=active': KILL_ALL_MEMBERS(peerID)
-            if TEXT and i % count_period == 0 :
-                send(new_message_rand())
+            ################## Выбор значения по ключу из command_service (команды функций с исполнением) ##################
+                elif str(TEXT).split(sep=' ')[0] in command_service_func:
+                    key2 = command_service_func.get(str(TEXT).split(sep=' ')[0])
+                    if key2 is not None: key2()
+                if TEXT and i % count_period == 0 :
+                    send(random.choice(a))
             ###########################################################################################
-            if TEXT in ['кик'] or (two_word_sep[0] == 'кик' and tag):
-                try:
-                    rpl = (respondent.object).get('reply_message', False)
-                    if rpl: kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
-                    if tag != '': kick(chat_id=peerID - 2000000000, member_id=int(tag_id[0].replace('[id','')))
-                except Exception as e: send(f"НЕЛЬЗЯ МУДИЛА {e}")
-     except Exception as e:
-         send(f"{e}")
+        except Exception as e:
+            send(f"{e}")
 ############################ отправка в чат телеги из вк ##################################
 
 def vk_bot_resend():
