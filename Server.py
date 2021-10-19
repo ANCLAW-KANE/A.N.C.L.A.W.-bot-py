@@ -1,4 +1,4 @@
-﻿import vk_api , random, telebot,logging,os, magic, re, math , time , requests
+﻿import vk_api , random, telebot,logging,os, magic, re, math , time , requests,sqlite3
 from PIL import Image
 import mimetypes as mtps
 from requests import get
@@ -6,7 +6,7 @@ from vk_api import VkApi , audio
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from CONFIG import a, idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes ,\
     count_period , command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,\
-    PEER_CRUSH_EVENT,full_permission_user_token,who_module
+    PEER_CRUSH_EVENT,full_permission_user_token,who_module,EVIL_GODS
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -46,6 +46,7 @@ vk_full = vk_session_full.get_api()
 longpoll_full = VkBotLongPoll(vk_session_full, IdGroupVK)
 upload = vk_api.VkUpload(vk_full)
 api_audio = vk_api.audio.VkAudio(vk_session_full)
+
 ################################## Блок функций #######################################
 def kick( chat_id, member_id):
     vk.messages.removeChatUser(chat_id=chat_id, user_id=member_id,member_id=member_id)
@@ -187,16 +188,51 @@ def manager_kick():
         if len(two_word_sep) == 2:
             tag = re.compile('@(\w+)').search(two_word_sep[1])
             tag_id = two_word_sep[1].split(sep='|')[0].replace('[id', '')
-            if two_word_sep[0] == '/кик' and tag:  kick(chat_id=peerID - 2000000000, member_id=int(tag_id))
+            if two_word_sep[0] == '/кик' and tag:  kick(chat_id=peerID - 2000000000, member_id=tag_id)
         else:
             rpl = (respondent.object).get('reply_message', False)
             if rpl:  kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
     except Exception as e:
          send(f"НЕЛЬЗЯ МУДИЛА \n{e}")
 
+def invite_user():
+    three_word_sep = str(respondent.object['text']).split(sep=' ', maxsplit=2)
+    try:
+        if len(three_word_sep) == 3 and three_word_sep[0] == '/addUser' and three_word_sep[1] == re.findall("[0-9]{1,10}",three_word_sep[1])[0] and three_word_sep[2]==re.findall("[0-9]{1,10}",three_word_sep[2])[0]:
+            vk_full.messages.addChatUser(chat_id=three_word_sep[1],user_id=three_word_sep[2])
+    except Exception as e:
+         send(f"НЕЛЬЗЯ МУДИЛА \n{e}")
+
+def EVIL_GOD_Update():
+    if respondent.object['from_id'] in EVIL_GODS:
+        BD = sqlite3.connect('peers.db')
+        edit = BD.cursor()
+        edit.execute(f"SELECT * FROM peers WHERE peer_id = {respondent.object['peer_id']}")
+        str_E_G = edit.fetchone()
+        if str_E_G[1] == '0':
+            str_E_G = '1'
+            send('Безмолвие')
+        else:
+            str_E_G = '0'
+            send('*Уходит*')
+        edit.execute("UPDATE peers SET e_g_mute = ? where peer_id = ?",(str_E_G,respondent.object['peer_id']))
+        BD.commit()
+
+def EVIL_GOD():
+    BD = sqlite3.connect('peers.db')
+    edit = BD.cursor()
+    edit.execute(f"SELECT * FROM peers WHERE peer_id = {respondent.object['peer_id']}")
+    str_E_G = edit.fetchone()
+    if respondent.object['from_id'] not in EVIL_GODS and str_E_G[1] == '1':
+        vk.messages.delete(peer_id = respondent.object['peer_id'],conversation_message_ids = respondent.object['conversation_message_id'],group_id=IdGroupVK,delete_for_all=1)
+
 ################################### вк бот ################################################
 def vk_bot_respondent():
     global i, respondent , peerID, who , tag, tag_id
+    BD = sqlite3.connect('peers.db')
+    edit = BD.cursor()
+    edit.execute("""CREATE TABLE IF NOT EXISTS peers( peer_id INT PRIMARY KEY, e_g_mute TEXT); """)
+    BD.commit()
     for respondent in longpoll.listen():
         try:
             if respondent.type == VkBotEventType.MESSAGE_NEW:
@@ -206,6 +242,10 @@ def vk_bot_respondent():
                 peerID = respondent.object['peer_id']
                 if respondent.object.from_id > 0: who = WHO(TEXT,getUserName(respondent.object.from_id))
                 TextSplitLowerDict = set(str(TEXT).lower().split())
+        ######################################### DB ########################################
+                data = (peerID,'0')
+                edit.execute("INSERT OR IGNORE INTO peers VALUES(?, ?)", data)
+                BD.commit()
         ################################ Словари для запрос-ответ #################################
                 command_service_text = {
                 '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
@@ -217,6 +257,8 @@ def vk_bot_respondent():
                     '/кик': manager_kick,
                     '/мем': get_album_photos_mem,
                     '/cabal:kill_all_members=active': KILL_ALL_MEMBERS,
+                    '/addUser': invite_user,
+                    '*присутствие_злого_бога*': EVIL_GOD_Update,
                 }
         ############################### Обработка ######################################
             ################## Выбор значения по ключу из command ##################
@@ -232,8 +274,8 @@ def vk_bot_respondent():
                 elif str(TEXT).split(sep=' ')[0] in command_service_func:
                     key2 = command_service_func.get(str(TEXT).split(sep=' ')[0])
                     if key2 is not None: key2()
-                if TEXT and i % count_period == 0 :
-                    send(random.choice(a))
+                if TEXT and i % count_period == 0 : send(random.choice(a))
+                if TEXT : EVIL_GOD()
             ###########################################################################################
         except Exception as e:
             send(f"{e}")
