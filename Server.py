@@ -5,7 +5,7 @@ from requests import get
 from vk_api import VkApi , audio
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from CONFIG import a, idGroupTelegram , IdGroupVK , teletoken , vktokenGroup , Nodes ,\
-    count_period , command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,\
+    command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,\
     PEER_CRUSH_EVENT,full_permission_user_token,who_module,EVIL_GODS
 
 ################### Логирование ###########################
@@ -21,7 +21,6 @@ tab = {
     'chat_invite_user': '⚠⚠⚠ ДОБАВЛЕН',
     'chat_invite_user_by_link': '⚠⚠⚠ ПРИГЛАШЕН ПО ССЫЛКЕ',
 }
-
 
 ################### Авторизация ###########################
 bot = telebot.TeleBot(teletoken)
@@ -226,12 +225,21 @@ def EVIL_GOD():
     if respondent.object['from_id'] not in EVIL_GODS and str_E_G[1] == '1':
         vk.messages.delete(peer_id = respondent.object['peer_id'],conversation_message_ids = respondent.object['conversation_message_id'],group_id=IdGroupVK,delete_for_all=1)
 
+def set_count_period():
+    two_word_sep = str(respondent.object['text']).split(sep=' ', maxsplit=1)
+    if len(two_word_sep) == 2 and two_word_sep[1] == re.findall("[0-9]{1,3}",two_word_sep[1])[0]:
+        BD = sqlite3.connect('peers.db')
+        edit = BD.cursor()
+        edit.execute("UPDATE peers SET count_period = ? where peer_id = ?", (int(two_word_sep[1]), respondent.object['peer_id']))
+        BD.commit()
+        send(f"Значение установлено на {two_word_sep[1]}")
+
 ################################### вк бот ################################################
 def vk_bot_respondent():
     global i, respondent , peerID, who , tag, tag_id
     BD = sqlite3.connect('peers.db')
     edit = BD.cursor()
-    edit.execute("""CREATE TABLE IF NOT EXISTS peers( peer_id INT PRIMARY KEY, e_g_mute TEXT); """)
+    edit.execute("""CREATE TABLE IF NOT EXISTS peers( peer_id INT PRIMARY KEY, e_g_mute TEXT,count_period INT); """)
     BD.commit()
     for respondent in longpoll.listen():
         try:
@@ -243,15 +251,17 @@ def vk_bot_respondent():
                 if respondent.object.from_id > 0: who = WHO(TEXT,getUserName(respondent.object.from_id))
                 TextSplitLowerDict = set(str(TEXT).lower().split())
         ######################################### DB ########################################
-                data = (peerID,'0')
-                edit.execute("INSERT OR IGNORE INTO peers VALUES(?, ?)", data)
+                data = (peerID,'0',0)
+                edit.execute("INSERT OR IGNORE INTO peers VALUES(?,?,?)", data)
                 BD.commit()
+                edit.execute(f"SELECT * FROM peers WHERE peer_id = {respondent.object['peer_id']}")
+                count_period = int(edit.fetchone()[2])
         ################################ Словари для запрос-ответ #################################
                 command_service_text = {
-                '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
-                '/clear_docs_init' : clear_docs(), #очистка доков в группе
-                f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
-                '/role_list': (str(list(who_module))).replace(',','\n').replace('[','').replace(']','').replace("'",""),
+                    '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
+                    '/clear_docs_init' : clear_docs(), #очистка доков в группе
+                    f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
+                    '/role_list': (str(list(who_module))).replace(',','\n').replace('[','').replace(']','').replace("'",""),
                 }
                 command_service_func = {
                     '/кик': manager_kick,
@@ -259,6 +269,7 @@ def vk_bot_respondent():
                     '/cabal:kill_all_members=active': KILL_ALL_MEMBERS,
                     '/addUser': invite_user,
                     '*присутствие_злого_бога*': EVIL_GOD_Update,
+                    '/частота': set_count_period
                 }
         ############################### Обработка ######################################
             ################## Выбор значения по ключу из command ##################
@@ -274,7 +285,10 @@ def vk_bot_respondent():
                 elif str(TEXT).split(sep=' ')[0] in command_service_func:
                     key2 = command_service_func.get(str(TEXT).split(sep=' ')[0])
                     if key2 is not None: key2()
-                if TEXT and i % count_period == 0 : send(random.choice(a))
+
+                if count_period !=0:
+                    if TEXT and i % count_period == 0 : send(random.choice(a))
+
                 if TEXT : EVIL_GOD()
             ###########################################################################################
         except Exception as e:
