@@ -16,6 +16,7 @@ logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(
 ################ Служебные переменные #####################
 i = 0
 tag = ''
+size_values = list("smxopqryzw")
 tab = {
     'chat_kick_user': '⚠⚠⚠ УДАЛЕН',
     'chat_invite_user': '⚠⚠⚠ ДОБАВЛЕН',
@@ -234,6 +235,8 @@ def set_count_period():
         BD.commit()
         send(f"Значение установлено на {two_word_sep[1]}")
 
+
+
 ################################### вк бот ################################################
 def vk_bot_respondent():
     global i, respondent , peerID, who , tag, tag_id
@@ -319,8 +322,12 @@ def vk_bot_resend():
                     else: tb1 += f"\nЛичное сообщение от пользователя\n {str(user)} \n"
             ###########################################################################################
                     if att['type'] == 'photo':  # Если прислали фото
-                            logging.info(f"{tb1}\n{att['photo']['sizes'][-1]['url']}\n_____________________________________________________")
-                            bot.send_photo(node, get(att['photo']['sizes'][-1]['url']).content, tb1)
+                            urls =[size['url'] for size in att['photo']['sizes']]
+                            types_ = [size['type'] for size in att['photo']['sizes']]
+                            max_size = sorted(types_, key=lambda x: size_values.index(x))[-1]
+                            urldict = dict(zip(types_, urls))
+                            logging.info(f"{tb1}\n{urldict.get(max_size)}\n_____________________________________________________")
+                            bot.send_photo(node, get(urldict.get(max_size)).content, tb1)
                 ###########################################################################################
                     elif att['type'] == 'doc':  # Если прислали документ
                         tb1 += (f"{str(att['doc']['url']).replace('no_preview=1', '')}\n_____________________________________________________")
