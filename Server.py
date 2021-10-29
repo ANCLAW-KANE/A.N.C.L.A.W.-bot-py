@@ -310,6 +310,7 @@ def vk_bot_resend():
             vk.messages.send(random_id=random.randint(0, 999999), message="Поток 2 активен", peer_id=resend.obj.peer_id)
         ################################## Обработчик #########################################
         if resend.type == VkBotEventType.MESSAGE_NEW:
+            print(resend.object)
             UserId = resend.object['from_id']
             user = str(getUserName(UserId))
             PeerId = resend.object.peer_id
@@ -328,6 +329,13 @@ def vk_bot_resend():
                             urldict = dict(zip(types_, urls))
                             logging.info(f"{tb1}\n{urldict.get(max_size)}\n_____________________________________________________")
                             bot.send_photo(node, get(urldict.get(max_size)).content, tb1)
+                ###########################################################################################
+                    elif att['type'] == 'audio_message':
+                        logging.info(f"{tb1}\n{att['audio_message']['link_mp3']}")
+                        bot.send_audio(node,get(att['audio_message']['link_mp3']).content,tb1)
+                ###########################################################################################
+                    elif att['type'] == 'sticker':
+                        bot.send_photo(node, get(att['sticker']['images'][2]['url']).content, tb1)
                 ###########################################################################################
                     elif att['type'] == 'doc':  # Если прислали документ
                         tb1 += (f"{str(att['doc']['url']).replace('no_preview=1', '')}\n_____________________________________________________")
