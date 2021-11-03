@@ -32,10 +32,9 @@ longpoll = VkBotLongPoll(vk_session, IdGroupVK)
 
 def captcha_handler(captcha):#обход капчи
     print(f"Enter captcha code: {captcha.get_url()}")
+    vk.messages.send(random_id=random.randint(0, 999999), message=f"Enter captcha code: {captcha.get_url()}",peer_id=CAPTCHA_EVENT)
     for captcha_trigger in longpoll.listen():
-        if captcha_trigger.object.peer_id == CAPTCHA_EVENT:
-            vk.messages.send(random_id=random.randint(0, 999999), message=f"Enter captcha code: {captcha.get_url()}", peer_id=CAPTCHA_EVENT)
-            return captcha.try_again( captcha_trigger.object.text)
+        return captcha.try_again( captcha_trigger.object.text)
 
 vk_session_user : VkApi = vk_api.VkApi(token=vktokenUser,captcha_handler=captcha_handler)#Пользователь
 vk_user = vk_session_user.get_api()
