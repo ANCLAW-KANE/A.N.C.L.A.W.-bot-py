@@ -275,15 +275,15 @@ def words_manager():
     if len(word_sep) == 2 and len(word_sep_l) == 3:
             try:
                 if word_sep[1] == 'create':
-                    edit.execute("INSERT OR IGNORE INTO words VALUES(?,?)", (word_sep_l[1], word_sep_l[2]))
+                    edit.execute("INSERT OR IGNORE INTO words VALUES(?,?)", (word_sep_l[1].lower(), word_sep_l[2]))
                     BD.commit()
                     send("Создано")
                 if word_sep[1] == 'update':
-                    edit.execute("UPDATE words SET val = ? where key = ?", (word_sep_l[2], word_sep_l[1]))
+                    edit.execute("UPDATE words SET val = ? where key = ?", (word_sep_l[2], word_sep_l[1].lower()))
                     BD.commit()
                     send("Обновлено")
                 if word_sep[1] == 'delete':
-                    edit.execute("DELETE FROM words where key = ? and val = ?",(word_sep_l[1], word_sep_l[2]))
+                    edit.execute("DELETE FROM words where key = ? and val = ?",(word_sep_l[1].lower(), word_sep_l[2]))
                     BD.commit()
                     send("Удалено")
             except Exception as e:
