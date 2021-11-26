@@ -354,14 +354,15 @@ def vk_bot_respondent():
             ################## Выбор значения по ключу из command ##################
                 if str(TEXT).split(sep=' ')[0] != '/word' and TEXT is not None:
                     dw = dict(words)
-                    if TextSplitLowerDict & set(Dictwords):
-                        for element in TextSplitLowerDict:
-                            key = dw.get(element)
-                            if key is not None: send(key)
-                    elif set(lines) & set(Dictwords):
+                    if set(lines) & set(Dictwords):
                         for element in lines:
                             key = dw.get(element)
                             if key is not None: send(key)
+                    elif TextSplitLowerDict & set(Dictwords):
+                        for element in TextSplitLowerDict:
+                            key = dw.get(element)
+                            if key is not None: send(key)
+
 
             ################## Выбор значения по ключу из command_service (команды функций с возвратом текста) ##################
                 if TEXT in command_service_text:
