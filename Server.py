@@ -279,11 +279,11 @@ def words_manager():
                     BD.commit()
                     send("Создано")
                 if word_sep[1] == 'update':
-                    edit.execute("UPDATE words SET tg_id = ? where peer_id = ?", (word_sep[1], word_sep[2]))
+                    edit.execute("UPDATE words SET tg_id = ? where peer_id = ?", (word_sep_l[1], word_sep_l[2]))
                     BD.commit()
                     send("Обновлено")
                 if word_sep[1] == 'delete':
-                    edit.execute("DELETE FROM words where key = ? and val = ?",(word_sep[1], word_sep[2]))
+                    edit.execute("DELETE FROM words where key = ? and val = ?",(word_sep_l[1], word_sep_l[2]))
                     BD.commit()
                     send("Удалено")
             except Exception as e:
