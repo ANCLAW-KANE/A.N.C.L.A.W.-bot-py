@@ -5,7 +5,7 @@ from requests import get
 from vk_api import VkApi , audio
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from CONFIG import a, idGroupTelegram , IdGroupVK , teletoken , vktokenGroup  ,\
-    command, vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,\
+    vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,\
     PEER_CRUSH_EVENT,full_permission_user_token,who_module,EVIL_GODS
 
 ################### Логирование ###########################
@@ -260,7 +260,6 @@ def edit_node():
             if word_sep[1] == 'list':
                 edit.execute("SELECT * FROM nodes")
                 list_nodes= edit.fetchall()
-                print(list_nodes)
                 s = ''
                 n = 0
                 for node in list_nodes:
@@ -268,8 +267,37 @@ def edit_node():
                     s += f"{n}: {str(node)}\n"
                 send(s)
 
-
-
+def words_manager():
+    BD = sqlite3.connect('peers.db')
+    edit = BD.cursor()
+    word_sep_l = str(respondent.object['text']).splitlines()
+    word_sep = str(word_sep_l[0]).split(sep=' ', maxsplit=1)
+    if len(word_sep) == 2 and len(word_sep_l) == 3:
+            try:
+                if word_sep[1] == 'create':
+                    edit.execute("INSERT OR IGNORE INTO words VALUES(?,?)", (word_sep_l[1], word_sep_l[2]))
+                    BD.commit()
+                    send("Создано")
+                if word_sep[1] == 'update':
+                    edit.execute("UPDATE words SET tg_id = ? where peer_id = ?", (word_sep[1], word_sep[2]))
+                    BD.commit()
+                    send("Обновлено")
+                if word_sep[1] == 'delete':
+                    edit.execute("DELETE FROM words where key = ? and val = ?",(word_sep[1], word_sep[2]))
+                    BD.commit()
+                    send("Удалено")
+            except Exception as e:
+                send(f"Не успешно: {e}")
+    if len(word_sep) == 2:
+        if word_sep[1] == 'list':
+            edit.execute("SELECT * FROM words")
+            list_words = edit.fetchall()
+            s = ''
+            n = 0
+            for word in list_words:
+                n = n + 1
+                s += f"{n}: {str(word)}\n"
+            send(s)
 
 ################################### вк бот ################################################
 def vk_bot_respondent():
@@ -278,6 +306,7 @@ def vk_bot_respondent():
     edit = BD.cursor()
     edit.execute("""CREATE TABLE IF NOT EXISTS peers( peer_id INT PRIMARY KEY, e_g_mute TEXT,count_period INT); """)
     edit.execute("""CREATE TABLE IF NOT EXISTS nodes( peer_id INT PRIMARY KEY, tg_id INT); """)
+    edit.execute("""CREATE TABLE IF NOT EXISTS words( key TEXT PRIMARY KEY, val TEXT); """)
     BD.commit()
     for respondent in longpoll.listen():
         try:
@@ -287,13 +316,23 @@ def vk_bot_respondent():
                 TEXT = respondent.object['text']
                 peerID = respondent.object['peer_id']
                 if respondent.object.from_id > 0: who = WHO(TEXT,getUserName(respondent.object.from_id))
-                TextSplitLowerDict = set(str(TEXT).lower().split())
+                lines = str(TEXT).lower().splitlines()
+                TextSplitLowerDict = set('')
+                if lines: TextSplitLowerDict = set(lines[0].split())
+                Dictwords = []
         ######################################### DB ########################################
+                #Стандартные настройки чатов
                 data = (peerID,'0',0)
                 edit.execute("INSERT OR IGNORE INTO peers VALUES(?,?,?)", data)
                 BD.commit()
+                #Частота
                 edit.execute(f"SELECT * FROM peers WHERE peer_id = {respondent.object['peer_id']}")
                 count_period = int(edit.fetchone()[2])
+                #Шаблонные ответы
+                edit.execute(f"SELECT * FROM words")
+                words = edit.fetchall()
+                for word in words:
+                    Dictwords.append(word[0])
         ################################ Словари для запрос-ответ #################################
                 command_service_text = {
                     '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
@@ -308,26 +347,32 @@ def vk_bot_respondent():
                     '/addUser': invite_user,
                     '*присутствие_злого_бога*': EVIL_GOD_Update,
                     '/частота': set_count_period,
-                    '/node': edit_node
+                    '/node': edit_node,
+                    '/word': words_manager,
                 }
         ############################### Обработка ######################################
             ################## Выбор значения по ключу из command ##################
-                if TextSplitLowerDict & set(command):
-                    for element in TextSplitLowerDict:
-                        key = command.get(element)
-                        if key is not None: send(key)
+                if str(TEXT).split(sep=' ')[0] != '/word' and TEXT is not None:
+                    dw = dict(words)
+                    if TextSplitLowerDict & set(Dictwords):
+                        for element in TextSplitLowerDict:
+                            key = dw.get(element)
+                            if key is not None: send(key)
+                    elif set(lines) & set(Dictwords):
+                        for element in lines:
+                            key = dw.get(element)
+                            if key is not None: send(key)
+
             ################## Выбор значения по ключу из command_service (команды функций с возвратом текста) ##################
-                elif TEXT in command_service_text:
+                if TEXT in command_service_text:
                     key1 = command_service_text.get(TEXT)
                     if key1 is not None: send(key1)
             ################## Выбор значения по ключу из command_service (команды функций с исполнением) ##################
-                elif str(TEXT).split(sep=' ')[0] in command_service_func:
+                if str(TEXT).split(sep=' ')[0] in command_service_func:
                     key2 = command_service_func.get(str(TEXT).split(sep=' ')[0])
                     if key2 is not None: key2()
 
-                if count_period !=0:
-                    if TEXT and i % count_period == 0 : send(random.choice(a))
-
+                if count_period !=0 and TEXT and i % count_period == 0:  send(random.choice(a))
                 if TEXT : EVIL_GOD()
             ###########################################################################################
         except Exception as e:
@@ -342,15 +387,11 @@ def vk_bot_resend():
         try:
             ################################## Обработчик #########################################
             if resend.type == VkBotEventType.MESSAGE_NEW:
-                print(resend.object['peer_id'])
                 ########################## Распределение точек отправки ###############################
                 edit.execute(f"SELECT tg_id FROM nodes WHERE peer_id = {resend.object['peer_id']}")
                 tg_id = edit.fetchone()
-                print(tg_id)
                 if tg_id is not None: node = tg_id[0]
                 else: node = idGroupTelegram
-                print(node)
-                print(resend.object['from_id'])
                 #######################################################################################
                 UserId = resend.object['from_id']
                 user = str(getUserName(UserId))
