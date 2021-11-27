@@ -6,7 +6,7 @@ from vk_api import VkApi , audio
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from CONFIG import a, idGroupTelegram , IdGroupVK , teletoken , vktokenGroup  ,\
     vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,\
-    PEER_CRUSH_EVENT,full_permission_user_token,who_module,EVIL_GODS
+    PEER_CRUSH_EVENT,full_permission_user_token,EVIL_GODS
 
 ################### Логирование ###########################
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
@@ -148,8 +148,15 @@ def get_album_photos_mem():
         except Exception as e : return send_attachments('photo388145277_456240127',f'блядь я мем пробухал\n {e}')
 
 def WHO(object,get_sender):
-        s = str(object).lower().split(maxsplit=1)
-        if len(s) == 2:
+    comm = []
+    BDROLES = sqlite3.connect('peers_roles.db')
+    edit_roles = BDROLES.cursor()
+    edit_roles.execute(f"SELECT command FROM '{respondent.object['peer_id']}'")
+    commands = edit_roles.fetchall()
+    for command in commands:
+        comm.append(f"!{command[0]}")
+    s = str(object).lower().split(maxsplit=1)
+    if len(s) == 2:
             tag = re.compile('@(\w+)').search(s[1])
             ss = s[0] + ' ' + s[1]
             if s[0] == "!кто" and s[1] is not None:
@@ -161,16 +168,17 @@ def WHO(object,get_sender):
                       + random.choice([get_sender , tag.group(0)]) + "   🏆"
             elif s[0] == "!факт" and s[1] is not None:
                 srs = "❗ Факт (" + s[1] + ") " + random.choice(['Ложь ⛔', 'Правда ✅'])
-            elif s[0] in who_module and tag:
-                key = who_module.get(s[0])
-                srs = f"{key[0] +  get_sender + key[1] + tag.group(0) + key[2]}"
+            elif s[0] in comm and tag:
+                edit_roles.execute(f"SELECT emoji_1, txt, emoji_2 FROM '{respondent.object['peer_id']}' where command = " f"'{s[0].replace('!','')}'")
+                key = edit_roles.fetchall()[0]
+                srs = f"{key[0]}   {get_sender}  {key[1]}  {tag.group(0)}  {key[2]}"
             else:
                 ss = None
                 srs = None
-        else:
-            ss = None
-            srs = None
-        return [ss,srs]
+    else:
+        ss = None
+        srs = None
+    return [ss,srs]
 
 def convert_img(input,output_name,convert_to):
     ipng = Image.open(input).convert()
@@ -264,40 +272,84 @@ def edit_node():
                 n = 0
                 for node in list_nodes:
                     n=n+1
-                    s += f"{n}: {str(node)}\n"
+                    s += f"{n}: {node[0]} {node[1]}\n"
                 send(s)
 
 def words_manager():
-    BD = sqlite3.connect('peers.db')
-    edit = BD.cursor()
+    BDWORDS = sqlite3.connect('peers_words.db')
+    edit_word = BDWORDS.cursor()
     word_sep_l = str(respondent.object['text']).splitlines()
     word_sep = str(word_sep_l[0]).split(sep=' ', maxsplit=1)
-    if len(word_sep) == 2 and len(word_sep_l) == 3:
-            try:
+    edit_word.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
+    count = edit_word.fetchall()
+    num = []
+    for n in count:
+        num.append(n[2])
+    if not num : num.append(0)
+    if len(word_sep) == 2:
+        try:
+            if len(word_sep_l) == 3:
                 if word_sep[1] == 'create':
-                    edit.execute("INSERT OR IGNORE INTO words VALUES(?,?)", (word_sep_l[1].lower(), word_sep_l[2]))
-                    BD.commit()
+                    edit_word.execute(f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES(?,?,?)", (word_sep_l[1].lower(), word_sep_l[2],int(max(num)+1)))
+                    BDWORDS.commit()
                     send("Создано")
                 if word_sep[1] == 'update':
-                    edit.execute("UPDATE words SET val = ? where key = ?", (word_sep_l[2], word_sep_l[1].lower()))
-                    BD.commit()
+                    edit_word.execute(f"UPDATE '{str(respondent.object['peer_id'])}' SET val = ? where key = ?", (word_sep_l[2], word_sep_l[1].lower()))
+                    BDWORDS.commit()
                     send("Обновлено")
+            if len(word_sep_l) == 2:
                 if word_sep[1] == 'delete':
-                    edit.execute("DELETE FROM words where key = ? and val = ?",(word_sep_l[1].lower(), word_sep_l[2]))
-                    BD.commit()
+                    edit_word.execute(f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN {tuple(word_sep_l[1].split(sep=' '))}")
+                    BDWORDS.commit()
                     send("Удалено")
-            except Exception as e:
-                send(f"Не успешно: {e}")
+            if word_sep[1] == 'list':
+                edit_word.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
+                list_words = edit_word.fetchall()
+                s = ''
+                for word in list_words:
+                    s += f"{word[2]}: {word[0]} -  {word[1]}\n"
+                if s == '': s='Ничего нет'
+                send(s)
+        except Exception as e:
+            send(f"Не успешно: {e}")
+
+def role_manager():
+    BDROLES = sqlite3.connect('peers_roles.db')
+    edit_roles = BDROLES.cursor()
+    word_sep_l = str(respondent.object['text']).splitlines()
+    word_sep = str(word_sep_l[0]).split(sep=' ', maxsplit=1)
+    edit_roles.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
+    count = edit_roles.fetchall()
+    num = []
+    for n in count:
+        num.append(n[0])
+    if not num : num.append(0)
     if len(word_sep) == 2:
-        if word_sep[1] == 'list':
-            edit.execute("SELECT * FROM words")
-            list_words = edit.fetchall()
-            s = ''
-            n = 0
-            for word in list_words:
-                n = n + 1
-                s += f"{n}: {str(word)}\n"
-            send(s)
+        try:
+            if len(word_sep_l) == 5:
+                if word_sep[1] == 'create':
+                    edit_roles.execute(f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES(?,?,?,?,?)", ((int(max(num)+1)),word_sep_l[1].lower(), word_sep_l[2],word_sep_l[3],word_sep_l[4]))
+                    BDROLES.commit()
+                    send("Создано")
+                if word_sep[1] == 'update':
+                    edit_roles.execute(f"UPDATE '{str(respondent.object['peer_id'])}' SET emoji_1 = ?, txt = ?, emoji_2 = ? where command = ?", (word_sep_l[2],word_sep_l[3],word_sep_l[4], word_sep_l[1].lower()))
+                    BDROLES.commit()
+                    send("Обновлено")
+            if len(word_sep_l) == 2:
+                if word_sep[1] == 'delete':
+                    edit_roles.execute(f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN {tuple(word_sep_l[1].split(sep=' '))}")
+                    BDROLES.commit()
+                    send("Удалено")
+            if word_sep[1] == 'list':
+                edit_roles.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
+                list_words = edit_roles.fetchall()
+                s = ''
+                for word in list_words:
+                    s += f"{word[0]}: {word[1]} -  \t{word[2]} ? \t{word[3]} ? \t{word[4]}\n"
+                if s == '': s='Ничего нет'
+                send(s)
+        except Exception as e:
+            send(f"Не успешно: {e}")
 
 ################################### вк бот ################################################
 def vk_bot_respondent():
@@ -306,10 +358,18 @@ def vk_bot_respondent():
     edit = BD.cursor()
     edit.execute("""CREATE TABLE IF NOT EXISTS peers( peer_id INT PRIMARY KEY, e_g_mute TEXT,count_period INT); """)
     edit.execute("""CREATE TABLE IF NOT EXISTS nodes( peer_id INT PRIMARY KEY, tg_id INT); """)
-    edit.execute("""CREATE TABLE IF NOT EXISTS words( key TEXT PRIMARY KEY, val TEXT); """)
     BD.commit()
+
+    BDWORDS = sqlite3.connect('peers_words.db')
+    edit_word = BDWORDS.cursor()
+    BDWORDS.commit()
+
+    BDROLES = sqlite3.connect('peers_roles.db')
+    edit_roles = BDROLES.cursor()
+    BDROLES.commit()
+
     for respondent in longpoll.listen():
-        try:
+        #try:
             if respondent.type == VkBotEventType.MESSAGE_NEW:
                 i = i + 1
         ######################################### VK Event ########################################
@@ -325,20 +385,23 @@ def vk_bot_respondent():
                 data = (peerID,'0',0)
                 edit.execute("INSERT OR IGNORE INTO peers VALUES(?,?,?)", data)
                 BD.commit()
-                #Частота
+                #Частота рандомных ответов
                 edit.execute(f"SELECT * FROM peers WHERE peer_id = {respondent.object['peer_id']}")
                 count_period = int(edit.fetchone()[2])
                 #Шаблонные ответы
-                edit.execute(f"SELECT * FROM words")
-                words = edit.fetchall()
+                edit_word.execute(f"CREATE TABLE IF NOT EXISTS '{str(respondent.object['peer_id'])}' ( key TEXT PRIMARY KEY, val TEXT,id INT);")
+                BDWORDS.commit()
+                edit_word.execute(f"SELECT key,val FROM '{str(respondent.object['peer_id'])}' ")
+                words = edit_word.fetchall()
                 for word in words:
                     Dictwords.append(word[0])
+                #ролевые команды
+                edit_roles.execute(f"CREATE TABLE IF NOT EXISTS '{str(respondent.object['peer_id'])}' ( id INT PRIMARY KEY, command TEXT ,emoji_1 TEXT, txt TEXT, emoji_2 TEXT);")
         ################################ Словари для запрос-ответ #################################
                 command_service_text = {
                     '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
                     '/clear_docs_init' : clear_docs(), #очистка доков в группе
                     f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
-                    '/role_list': (str(list(who_module))).replace(',','\n').replace('[','').replace(']','').replace("'",""),
                 }
                 command_service_func = {
                     '/кик': manager_kick,
@@ -349,6 +412,7 @@ def vk_bot_respondent():
                     '/частота': set_count_period,
                     '/node': edit_node,
                     '/word': words_manager,
+                    '/role': role_manager,
                 }
         ############################### Обработка ######################################
             ################## Выбор значения по ключу из command ##################
@@ -376,8 +440,8 @@ def vk_bot_respondent():
                 if count_period !=0 and TEXT and i % count_period == 0:  send(random.choice(a))
                 if TEXT : EVIL_GOD()
             ###########################################################################################
-        except Exception as e:
-            send(f"{e}")
+        #except Exception as e:
+        #    send(f"{e}")
 ############################ отправка в чат телеги из вк ##################################
 
 def vk_bot_resend():
