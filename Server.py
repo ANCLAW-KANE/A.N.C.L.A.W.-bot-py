@@ -369,7 +369,7 @@ def vk_bot_respondent():
     BDROLES.commit()
 
     for respondent in longpoll.listen():
-        #try:
+        try:
             if respondent.type == VkBotEventType.MESSAGE_NEW:
                 i = i + 1
         ######################################### VK Event ########################################
@@ -440,8 +440,8 @@ def vk_bot_respondent():
                 if count_period !=0 and TEXT and i % count_period == 0:  send(random.choice(a))
                 if TEXT : EVIL_GOD()
             ###########################################################################################
-        #except Exception as e:
-        #    send(f"{e}")
+        except Exception as e:
+            send(f"{e}")
 ############################ отправка в чат телеги из вк ##################################
 
 def vk_bot_resend():
