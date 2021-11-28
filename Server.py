@@ -478,16 +478,17 @@ def vk_bot_respondent():
                 }
         ############################### Обработка ######################################
             ################## Выбор значения по ключу из command ##################
-                if str(TEXT)[0] != '/' and TEXT is not None:
-                    dw = dict(words)
-                    if set(lines) & set(Dictwords):
-                        for element in lines:
-                            key = dw.get(element)
-                            if key is not None: send(key)
-                    elif TextSplitLowerDict & set(Dictwords):
-                        for element in TextSplitLowerDict:
-                            key = dw.get(element)
-                            if key is not None: send(key)
+                if TEXT is not '':
+                    if str(TEXT)[0] != '/':
+                        dw = dict(words)
+                        if set(lines) & set(Dictwords):
+                            for element in lines:
+                                key = dw.get(element)
+                                if key is not None: send(key)
+                        elif TextSplitLowerDict & set(Dictwords):
+                            for element in TextSplitLowerDict:
+                                key = dw.get(element)
+                                if key is not None: send(key)
 
 
             ################## Выбор значения по ключу из command_service (команды функций с возвратом текста) ##################
