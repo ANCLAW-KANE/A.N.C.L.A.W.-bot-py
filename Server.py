@@ -148,15 +148,16 @@ def get_album_photos_mem():
         except Exception as e : return send_attachments('photo388145277_456240127',f'блядь я мем пробухал\n {e}')
 
 def WHO(object,get_sender):
-    comm = []
-    BDROLES = sqlite3.connect('peers_roles.db')
-    edit_roles = BDROLES.cursor()
-    edit_roles.execute(f"SELECT command FROM '{respondent.object['peer_id']}'")
-    commands = edit_roles.fetchall()
-    for command in commands:
-        comm.append(f"!{command[0]}")
+
     s = str(object).lower().split(maxsplit=1)
-    if len(s) == 2:
+    if len(s) == 2 and s[0]!='/node':
+            comm = []
+            BDROLES = sqlite3.connect('peers_roles.db')
+            edit_roles = BDROLES.cursor()
+            edit_roles.execute(f"SELECT command FROM '{respondent.object['peer_id']}'")
+            commands = edit_roles.fetchall()
+            for command in commands:
+                comm.append(f"!{command[0]}")
             tag = re.compile('@(\w+)').search(s[1])
             ss = s[0] + ' ' + s[1]
             if s[0] == "!кто" and s[1] is not None:
@@ -274,6 +275,7 @@ def edit_node():
                     n=n+1
                     s += f"{n}: {node[0]} {node[1]}\n"
                 send(s)
+    BD.close()
 
 def words_manager():
     BDWORDS = sqlite3.connect('peers_words.db')
@@ -312,6 +314,7 @@ def words_manager():
                 send(s)
         except Exception as e:
             send(f"Не успешно: {e}")
+    BDWORDS.close()
 
 def role_manager():
     BDROLES = sqlite3.connect('peers_roles.db')
@@ -350,6 +353,7 @@ def role_manager():
                 send(s)
         except Exception as e:
             send(f"Не успешно: {e}")
+    BDROLES.close()
 
 ################################### вк бот ################################################
 def vk_bot_respondent():
