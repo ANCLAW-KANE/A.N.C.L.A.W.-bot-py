@@ -117,6 +117,24 @@ def write_file(name,getfile):
     with open(name, 'bw') as f:
         f.write(getfile)
 
+def BD_COUNT(get_,on_index):
+    count = get_.fetchall()
+    num = []
+    for n in count:
+        num.append(n[on_index])
+    if not num: num.append(0)
+    return num
+
+def BD_LIST(get_):
+    ss = ''
+    for word in get_:
+        s = ''
+        for ii in word:
+            s += f" - {ii}"
+        ss += f"{s}\n"
+    if ss == '': ss = 'Ничего нет'
+    return ss
+
 def clear_docs():
     d = vk_user.docs.get(owner_id='-'+ str(IdGroupVK))
     docs = []
@@ -281,122 +299,129 @@ def edit_node():
                 send(s)
         BD.close()
 
-def words_manager():
-    BDWORDS = sqlite3.connect('peers_words.db')
-    edit_word = BDWORDS.cursor()
-    word_sep_l = str(respondent.object['text']).splitlines()
-    word_sep = str(word_sep_l[0]).split(sep=' ', maxsplit=1)
-    edit_word.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
-    count = edit_word.fetchall()
-    num = []
-    for n in count:
-        num.append(n[2])
-    if not num : num.append(0)
-    if len(word_sep) == 2:
-        try:
-            if len(word_sep_l) == 3:
-                if word_sep[1] == 'create':
-                    edit_word.execute(f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES(?,?,?)", (word_sep_l[1].lower(), word_sep_l[2],int(max(num)+1)))
-                    BDWORDS.commit()
-                    send("Создано")
-                if word_sep[1] == 'update':
-                    edit_word.execute(f"UPDATE '{str(respondent.object['peer_id'])}' SET val = ? where key = ?", (word_sep_l[2], word_sep_l[1].lower()))
-                    BDWORDS.commit()
-                    send("Обновлено")
-            if len(word_sep_l) == 2:
-                if word_sep[1] == 'delete':
-                    edit_word.execute(f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN ({to_tuple(word_sep_l[1].split(sep=' '))})")
-                    BDWORDS.commit()
-                    send("Удалено")
-            if word_sep[1] == 'list':
-                edit_word.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
-                list_words = edit_word.fetchall()
-                s = ''
-                for word in list_words:
-                    s += f"{word[2]}: {word[0]} -  {word[1]}\n"
-                if s == '': s='Ничего нет'
-                send(s)
-        except Exception as e:
-            send(f"Не успешно: {e}")
-    BDWORDS.close()
+class manager(object):
+    def __init__(self,word_sep_l,word_sep):
+        self.word_sep_l = word_sep_l
+        self.word_sep = word_sep
 
-def role_manager():
-    BDROLES = sqlite3.connect('peers_roles.db')
-    edit_roles = BDROLES.cursor()
-    word_sep_l = str(respondent.object['text']).splitlines()
-    word_sep = str(word_sep_l[0]).split(sep=' ', maxsplit=1)
-    edit_roles.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
-    count = edit_roles.fetchall()
-    num = []
-    for n in count:
-        num.append(n[0])
-    if not num : num.append(0)
-    if len(word_sep) == 2:
-        try:
-            if len(word_sep_l) == 5:
-                if word_sep[1] == 'create':
-                    edit_roles.execute(f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES(?,?,?,?,?)", ((int(max(num)+1)),word_sep_l[1].lower(), word_sep_l[2],word_sep_l[3],word_sep_l[4]))
-                    BDROLES.commit()
+    def word(self):
+        BDWORDS = sqlite3.connect('peers_words.db')
+        edit_word = BDWORDS.cursor()
+        edit_word.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
+        num = BD_COUNT(edit_word,0)
+        if len(self.word_sep) == 3:
+            if len(self.word_sep_l) == 3:
+                if  self.word_sep[2] == 'create':
+                    edit_word.execute(
+                      f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES("
+                      f"{int(max(num)+1)},"
+                      f"{to_tuple(self.word_sep_l[1].splitlines()).lower()},"
+                      f"{to_tuple(self.word_sep_l[2].splitlines())})")
+                    BDWORDS.commit()
                     send("Создано")
-                if word_sep[1] == 'update':
-                    edit_roles.execute(f"UPDATE '{str(respondent.object['peer_id'])}' SET emoji_1 = ?, txt = ?, emoji_2 = ? where command = ?", (word_sep_l[2],word_sep_l[3],word_sep_l[4], word_sep_l[1].lower()))
-                    BDROLES.commit()
-                    send("Обновлено")
-            if len(word_sep_l) == 2:
-                if word_sep[1] == 'delete':
-                    edit_roles.execute(f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN ({to_tuple(word_sep_l[1].split(sep=' '))})")
-                    BDROLES.commit()
+            if len(self.word_sep_l) == 2:
+                if self.word_sep[2] == 'delete':
+                    edit_word.execute(
+                    f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN ("
+                    f"{to_tuple(self.word_sep_l[1].split(sep=' '))})")
+                    BDWORDS.commit()
                     send("Удалено")
-            if word_sep[1] == 'list':
-                edit_roles.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
-                list_words = edit_roles.fetchall()
-                s = ''
-                for word in list_words:
-                    s += f"{word[0]}: {word[1]} -  \t{word[2]} ? \t{word[3]} ? \t{word[4]}\n"
-                if s == '': s='Ничего нет'
-                send(s)
-        except Exception as e:
-            send(f"Не успешно: {e}")
-    BDROLES.close()
+        if len(self.word_sep) == 4 and len(self.word_sep_l) == 2:
+                if  self.word_sep[2] == 'update':
+                    edit_word.execute(
+                    f"UPDATE '{str(respondent.object['peer_id'])}' SET val = "
+                    f"{to_tuple(self.word_sep_l[1].splitlines())} where id = "
+                    f"'{self.word_sep[3]}'")
+                    BDWORDS.commit()
+                    send("Обновлено")
+        if self.word_sep[2] == 'list':
+            edit_word.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
+            list_words = edit_word.fetchall()
+            s = BD_LIST(list_words)
+            send(s)
+        BDWORDS.close()
 
-def quote_manager():
-    BDQUOTES = sqlite3.connect('peers_quotes.db')
-    edit_quotes = BDQUOTES.cursor()
-    word_sep_l = str(respondent.object['text']).splitlines()
-    word_sep = str(word_sep_l[0]).split(sep=' ', maxsplit=2)
-    edit_quotes.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
-    count = edit_quotes.fetchall()
-    num = []
-    for n in count:
-        num.append(n[0])
-    if not num: num.append(0)
-    try:
-        if len(word_sep_l) == 2:
-            if len(word_sep) == 2:
-                if word_sep[1] == 'create':
-                    edit_quotes.execute(f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES(?,?)", ((int(max(num)+1)),word_sep_l[1]))
-                    BDQUOTES.commit()
-                    send("Создано")
-                if word_sep[1] == 'delete':
-                    edit_quotes.execute(f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN ({to_tuple(word_sep_l[1].split(sep=' '))})")
-                    BDQUOTES.commit()
-                    send("Удалено")
-            if len(word_sep) == 3:
-                if word_sep[1] == 'update' and word_sep[2] == re.findall("[0-9]{1,999}",word_sep[2])[0]:
-                    edit_quotes.execute(f"UPDATE '{str(respondent.object['peer_id'])}' SET quote = ? where id = ?", (word_sep_l[1],word_sep[2]))
-                    BDQUOTES.commit()
-                    send("Обновлено")
-        if word_sep[1] == 'list':
+    def role(self):
+        BDROLES = sqlite3.connect('peers_roles.db')
+        edit_roles = BDROLES.cursor()
+        edit_roles.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
+        num = BD_COUNT(edit_roles, 0)
+        if len(self.word_sep) == 3:
+            #try:
+                if len(self.word_sep_l) == 5:
+                    if self.word_sep[2] == 'create':
+                        edit_roles.execute(
+                            f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES(?,?,?,?,?)",
+                            ((int(max(num) + 1)), self.word_sep_l[1].lower(), self.word_sep_l[2], self.word_sep_l[3], self.word_sep_l[4]))
+                        BDROLES.commit()
+                        send("Создано")
+                    if self.word_sep[2] == 'update':
+                        edit_roles.execute(
+                            f"UPDATE '{str(respondent.object['peer_id'])}' SET emoji_1 = ?, txt = ?, emoji_2 = ? where command = ?",
+                            (self.word_sep_l[2], self.word_sep_l[3], self.word_sep_l[4], self.word_sep_l[1].lower()))
+                        BDROLES.commit()
+                        send("Обновлено")
+                if len(self.word_sep_l) == 2:
+                    if self.word_sep[2] == 'delete':
+                        edit_roles.execute(
+                            f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN ({to_tuple(self.word_sep_l[1].split(sep=' '))})")
+                        BDROLES.commit()
+                        send("Удалено")
+                if self.word_sep[2] == 'list':
+                    edit_roles.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
+                    list_words = edit_roles.fetchall()
+                    ss = BD_LIST(list_words)
+                    send(ss)
+            #except Exception as e:
+            #    send(f"Не успешно: {e}")
+        BDROLES.close()
+
+    def quote(self):
+        BDQUOTES = sqlite3.connect('peers_quotes.db')
+        edit_quotes = BDQUOTES.cursor()
+        edit_quotes.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
+        num = BD_COUNT(edit_quotes, 0)
+        try:
+            if len(self.word_sep_l) == 2:
+                if len(self.word_sep) == 3:
+                    if self.word_sep[2] == 'create':
+                        edit_quotes.execute(f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES(?,?)",
+                                            ((int(max(num) + 1)), self.word_sep_l[1]))
+                        BDQUOTES.commit()
+                        send("Создано")
+                    if self.word_sep[2] == 'delete':
+                        edit_quotes.execute(
+                            f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN ({to_tuple(self.word_sep_l[1].split(sep=' '))})")
+                        BDQUOTES.commit()
+                        send("Удалено")
+                if len(self.word_sep) == 4:
+                    if self.word_sep[2] == 'update' and self.word_sep[3] == re.findall("[0-9]{1,999}", self.word_sep[3])[0]:
+                        edit_quotes.execute(f"UPDATE '{str(respondent.object['peer_id'])}' SET quote = ? where id = ?",
+                                            (self.word_sep_l[1], self.word_sep[3]))
+                        BDQUOTES.commit()
+                        send("Обновлено")
+            if self.word_sep[2] == 'list':
                 edit_quotes.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
                 list_words = edit_quotes.fetchall()
-                s = ''
-                for word in list_words:
-                    s += f"{word[0]}: {word[1]}\n"
-                if s == '': s='Ничего нет'
+                s = BD_LIST(list_words)
                 send(s)
-    except Exception as e:
-        send(f"Не успешно: {e}")
-    BDQUOTES.close()
+        except Exception as e:
+            send(f"Не успешно: {e}")
+        BDQUOTES.close()
+
+
+
+def manager_f():
+    lines = str(respondent.object['text']).splitlines()
+    word_sep = str(lines[0]).split(sep=' ', maxsplit=3)
+    mgr = manager(lines,word_sep)
+
+    if word_sep[1] == 'word':
+            mgr.word()
+    if word_sep[1] =='role':
+            mgr.role()
+    if word_sep[1] =='quote':
+            mgr.quote()
 
 
 ################################### вк бот ################################################
@@ -421,7 +446,7 @@ def vk_bot_respondent():
     BDQUOTES.commit()
 
     for respondent in longpoll.listen():
-        try:
+        #try:
             if respondent.type == VkBotEventType.MESSAGE_NEW:
                 i = i + 1
         ######################################### VK Event ########################################
@@ -443,7 +468,7 @@ def vk_bot_respondent():
                 count_period = int(edit.fetchone()[2])
 
                 #Шаблонные ответы
-                edit_word.execute(f"CREATE TABLE IF NOT EXISTS '{str(respondent.object['peer_id'])}' ( key TEXT PRIMARY KEY, val TEXT,id INT);")
+                edit_word.execute(f"CREATE TABLE IF NOT EXISTS '{str(respondent.object['peer_id'])}' ( id INT, key TEXT PRIMARY KEY, val TEXT);")
                 BDWORDS.commit()
                 edit_word.execute(f"SELECT key,val FROM '{str(respondent.object['peer_id'])}' ")
                 words = edit_word.fetchall()
@@ -472,9 +497,7 @@ def vk_bot_respondent():
                     '*присутствие_злого_бога*': EVIL_GOD_Update,
                     '/частота': set_count_period,
                     '/node': edit_node,
-                    '/word': words_manager,
-                    '/role': role_manager,
-                    '/quote': quote_manager
+                    '/settings': manager_f
                 }
         ############################### Обработка ######################################
             ################## Выбор значения по ключу из command ##################
@@ -503,8 +526,8 @@ def vk_bot_respondent():
                 if count_period !=0 and TEXT and i % count_period == 0 and quotes != []:  send(random.choice(quotes))
                 if TEXT : EVIL_GOD()
             ###########################################################################################
-        except Exception as e:
-            send(f"{e}")
+        #except Exception as e:
+        #    send(f"{e}")
 ############################ отправка в чат телеги из вк ##################################
 
 def vk_bot_resend():
