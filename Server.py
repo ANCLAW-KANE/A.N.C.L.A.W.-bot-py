@@ -223,7 +223,7 @@ def manager_kick():
             rpl = (respondent.object).get('reply_message', False)
             if rpl:  kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
     except Exception as e:
-         send(f"НЕЛЬЗЯ МУДИЛА \n{e}")
+         send(f"НЕЛЬЗЯ \n{e}")
 
 def invite_user():
     three_word_sep = str(respondent.object['text']).split(sep=' ', maxsplit=2)
@@ -231,7 +231,7 @@ def invite_user():
         if len(three_word_sep) == 3 and three_word_sep[0] == '/addUser' and three_word_sep[1] == re.findall("[0-9]{1,10}",three_word_sep[1])[0] and three_word_sep[2]==re.findall("[0-9]{1,10}",three_word_sep[2])[0]:
             vk_full.messages.addChatUser(chat_id=three_word_sep[1],user_id=three_word_sep[2])
     except Exception as e:
-         send(f"НЕЛЬЗЯ МУДИЛА \n{e}")
+         send(f"НЕЛЬЗЯ \n{e}")
 
 def EVIL_GOD_Update():
     if respondent.object['from_id'] in EVIL_GODS:
