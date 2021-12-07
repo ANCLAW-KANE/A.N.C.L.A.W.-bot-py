@@ -1,21 +1,30 @@
-﻿import vk_api , random, telebot,logging,os, magic, re, math , time , requests,sqlite3
-from PIL import Image
+﻿import random, logging,os, magic, re, math , time , requests,sqlite3
+from tools import write_file, convert_img, write_file_json,read_file_json
+from online_tools import kick,getUserName,RandomMember,GetMembers,get_list_album,GET_CHAT_TITLE,SendTG,clear_docs
+from sessions import longpoll, vk, vk_full,vk_user,bot,longpoll_full,upload
+from managers import manager, base_config
+from datetime import datetime
 import mimetypes as mtps
 from requests import get
-from vk_api import VkApi , audio
-from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from CONFIG import idGroupTelegram , IdGroupVK , teletoken , vktokenGroup  ,\
-    vktokenUser, types ,CAPTCHA_EVENT,OWNER_ALBUM_PHOTO,\
-    PEER_CRUSH_EVENT,full_permission_user_token,EVIL_GODS
+from vk_api.bot_longpoll import  VkBotEventType
+from CONFIG import idGroupTelegram , IdGroupVK ,types , OWNER_ALBUM_PHOTO,PEER_CRUSH_EVENT,\
+    EVIL_GODS,config_file_json
 
 ################### Логирование ###########################
+
+
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
 console_out = logging.StreamHandler()
-logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(levelname)s]: %(message)s',
-                    datefmt='%m.%d.%Y %H:%M:%S', level=logging.INFO)
+logging.basicConfig(
+    handlers=(file_log, console_out),
+    format=u'[%(asctime)s | %(levelname)s]: %(message)s',
+    datefmt='%m.%d.%Y %H:%M:%S',
+    level=logging.INFO
+)
 ################ Служебные переменные #####################
 i = 0
 tag = ''
+
 size_values = list("smxopqryzw")
 tab = {
     'chat_kick_user': '⚠⚠⚠ УДАЛЕН',
@@ -23,138 +32,31 @@ tab = {
     'chat_invite_user_by_link': '⚠⚠⚠ ПРИГЛАШЕН ПО ССЫЛКЕ',
 }
 
-################### Авторизация ###########################
-bot = telebot.TeleBot(teletoken)
-
-vk_session: VkApi = vk_api.VkApi(token=vktokenGroup)#Группа
-vk = vk_session.get_api()
-longpoll = VkBotLongPoll(vk_session, IdGroupVK)
-
-def captcha_handler(captcha):#обход капчи
-    print(f"Enter captcha code: {captcha.get_url()}")
-    vk.messages.send(random_id=random.randint(0, 999999), message=f"Enter captcha code: {captcha.get_url()}",peer_id=CAPTCHA_EVENT)
-    for captcha_trigger in longpoll.listen():
-        return captcha.try_again( captcha_trigger.object.text)
-
-vk_session_user : VkApi = vk_api.VkApi(token=vktokenUser,captcha_handler=captcha_handler)#Пользователь
-vk_user = vk_session_user.get_api()
-
-vk_session_full : VkApi = vk_api.VkApi(token=full_permission_user_token,captcha_handler=captcha_handler)#VKME
-vk_full = vk_session_full.get_api()
-
-longpoll_full = VkBotLongPoll(vk_session_full, IdGroupVK)
-upload = vk_api.VkUpload(vk_full)
-api_audio = vk_api.audio.VkAudio(vk_session_full)
+data = {
+    'idGroupTelegram' : 0,
+    'PEER_CRUSH_EVENT' : 0,
+    'CAPTCHA_EVENT' : 0,
+    'OWNER_ALBUM_PHOTO' : 0,
+    'users_list_warn' : [],
+    'EVIL_GODS' : []
+}
+platforms = {
+    1 : 'мобильная версия сайта',
+    2 : 'iPhone',
+    3 : 'iPad',
+    4 : 'Android',
+    5 : 'Windows Phone',
+    6 : 'Windows 10',
+    7 : 'полная версия сайта'
+}
 
 ################################## Блок функций #######################################
-
-
-def kick( chat_id, member_id):
-    vk.messages.removeChatUser(chat_id=chat_id, user_id=member_id,member_id=member_id)
 
 def send(msg):
     vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=respondent.object.peer_id)
 
 def send_attachments(att,text):
     vk.messages.send(random_id=random.randint(0, 999999), message=text, peer_id=respondent.object.peer_id,attachment=att)
-
-def to_tuple(object):
-    return str(list(object)).replace('[','').replace(']','')
-
-def getUserName(object): #извлечение имени и фамилии
-        userId = int(object)
-        if 0 < userId < 2000000000:
-           username = vk.users.get(user_id=userId)
-           first_name = username[0]['first_name']
-           last_name = username[0]['last_name']
-           user = str(first_name + " " + last_name)
-           return user
-
-def GetMembers():
-    members = vk.messages.getConversationMembers(peer_id=respondent.object.peer_id,group_id=IdGroupVK)
-    membList = []
-    membListNotAdmin = []
-    membListAdmin = []
-    for mbs in members['items']:
-        member = mbs['member_id']
-        admin = mbs.get('is_admin', False)
-        if member > 0:
-            membList.append(member)
-        if member > 0 and admin != True:
-            membListNotAdmin.append(member)
-        if member > 0 and admin == True:
-            membListAdmin.append(member)
-    return [membList,membListNotAdmin,membListAdmin]
-
-def RandomMember():
-    userID = random.choice((GetMembers()[0]))
-    username = vk.users.get(user_id=userID)
-    first_name = username[0]['first_name']
-    last_name = username[0]['last_name']
-    user = str(first_name + " " + last_name)
-    randMember = '@id' + str(userID)
-    name_in_id = str(randMember + '(' + user + ')')
-    return name_in_id
-
-def SendTG(adress,TB):
-    bot.send_message(adress, TB)
-    logging.info(TB)
-
-def GET_CHAT_TITLE(object):
-    get_items_chat = vk.messages.getConversationsById(peer_ids=object)
-    for chats in get_items_chat['items']:
-        chat_title = chats['chat_settings']['title']
-        return chat_title
-
-#def reverse_Nodes():
-#    reverseNodes = []
-#    for idchat in Nodes.keys():
-#        reverseNodes.append((Nodes[idchat], idchat))
-#        getreversenode = dict(reverseNodes)
-#    return getreversenode
-
-def write_file(name,getfile):
-    with open(name, 'bw') as f:
-        f.write(getfile)
-
-def BD_COUNT(get_,on_index):
-    count = get_.fetchall()
-    num = []
-    for n in count:
-        num.append(n[on_index])
-    if not num: num.append(0)
-    return num
-
-def BD_LIST(get_):
-    ss = ''
-    for word in get_:
-        s = ''
-        for ii in word:
-            s += f" - {ii}"
-        ss += f"{s}\n"
-    if ss == '': ss = 'Ничего нет'
-    return ss
-
-def clear_docs():
-    d = vk_user.docs.get(owner_id='-'+ str(IdGroupVK))
-    docs = []
-    for item in d['items']:
-        doc = str(item['id'])
-        docs.append(doc)
-    for doc_ in docs:
-        vk_user.docs.delete(owner_id='-'+ str(IdGroupVK),doc_id=doc_)
-    return 'Удаление завершено'
-
-def get_list_album():
-    albums = vk_user.photos.getAlbums(owner_id=OWNER_ALBUM_PHOTO)
-    listAlbum = []
-    for item in albums['items']:
-        album = str(item['id'])
-        size = str(item['size'])
-        privacy = str(item['privacy_view'])
-        if re.compile("'all'").search(privacy):
-            listAlbum.append(album+'_'+size)
-    return listAlbum
 
 def get_album_photos_mem():
         try:
@@ -183,7 +85,7 @@ def WHO(object,get_sender):
             tag = re.compile('@(\w+)').search(s[1])
             ss = s[0] + ' ' + s[1]
             if s[0] == "!кто" and s[1] is not None:
-                srs = "❓ ➡➡➡  " + RandomMember() + '  ⬅⬅⬅  :  ' + s[1]
+                srs = "❓ ➡➡➡  " + RandomMember(respondent.object.peer_id) + '  ⬅⬅⬅  :  ' + s[1]
             elif s[0] == "!вероятность" and s[1] is not None:
                 srs = "📊 Вероятность для  (" + s[1] + ') : ' + str(random.randint(0,100)) +'%'
             elif s[0] == "!забив" and tag:
@@ -203,12 +105,8 @@ def WHO(object,get_sender):
         srs = None
     return [ss,srs]
 
-def convert_img(input,output_name,convert_to):
-    ipng = Image.open(input).convert()
-    ipng.save(output_name,convert_to)
-
 def KILL_ALL_MEMBERS():
-        list_members = GetMembers()[1]
+        list_members = GetMembers(respondent.object.peer_id)[1]
         for member in list_members:
             kick(chat_id= respondent.object['peer_id'] - 2000000000, member_id=member)
 
@@ -223,7 +121,7 @@ def manager_kick():
             rpl = (respondent.object).get('reply_message', False)
             if rpl:  kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
     except Exception as e:
-         send(f"НЕЛЬЗЯ \n{e}")
+         send(f"НЕЛЬЗЯ МУДИЛА \n{e}")
 
 def invite_user():
     three_word_sep = str(respondent.object['text']).split(sep=' ', maxsplit=2)
@@ -231,7 +129,7 @@ def invite_user():
         if len(three_word_sep) == 3 and three_word_sep[0] == '/addUser' and three_word_sep[1] == re.findall("[0-9]{1,10}",three_word_sep[1])[0] and three_word_sep[2]==re.findall("[0-9]{1,10}",three_word_sep[2])[0]:
             vk_full.messages.addChatUser(chat_id=three_word_sep[1],user_id=three_word_sep[2])
     except Exception as e:
-         send(f"НЕЛЬЗЯ \n{e}")
+         send(f"НЕЛЬЗЯ МУДИЛА \n{e}")
 
 def EVIL_GOD_Update():
     if respondent.object['from_id'] in EVIL_GODS:
@@ -299,138 +197,41 @@ def edit_node():
                 send(s)
         BD.close()
 
-class manager(object):
-    def __init__(self,word_sep_l,word_sep):
-        self.word_sep_l = word_sep_l
-        self.word_sep = word_sep
-
-    def word(self):
-        BDWORDS = sqlite3.connect('peers_words.db')
-        edit_word = BDWORDS.cursor()
-        edit_word.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
-        num = BD_COUNT(edit_word,0)
-        if len(self.word_sep) == 3:
-            if len(self.word_sep_l) == 3:
-                if  self.word_sep[2] == 'create':
-                    edit_word.execute(
-                      f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES("
-                      f"{int(max(num)+1)},"
-                      f"{to_tuple(self.word_sep_l[1].splitlines()).lower()},"
-                      f"{to_tuple(self.word_sep_l[2].splitlines())})")
-                    BDWORDS.commit()
-                    send("Создано")
-            if len(self.word_sep_l) == 2:
-                if self.word_sep[2] == 'delete':
-                    edit_word.execute(
-                    f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN ("
-                    f"{to_tuple(self.word_sep_l[1].split(sep=' '))})")
-                    BDWORDS.commit()
-                    send("Удалено")
-        if len(self.word_sep) == 4 and len(self.word_sep_l) == 2:
-                if  self.word_sep[2] == 'update':
-                    edit_word.execute(
-                    f"UPDATE '{str(respondent.object['peer_id'])}' SET val = "
-                    f"{to_tuple(self.word_sep_l[1].splitlines())} where id = "
-                    f"'{self.word_sep[3]}'")
-                    BDWORDS.commit()
-                    send("Обновлено")
-        if self.word_sep[2] == 'list':
-            edit_word.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
-            list_words = edit_word.fetchall()
-            s = BD_LIST(list_words)
-            send(s)
-        BDWORDS.close()
-
-    def role(self):
-        BDROLES = sqlite3.connect('peers_roles.db')
-        edit_roles = BDROLES.cursor()
-        edit_roles.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
-        num = BD_COUNT(edit_roles, 0)
-        if len(self.word_sep) == 3:
-            #try:
-                if len(self.word_sep_l) == 5:
-                    if self.word_sep[2] == 'create':
-                        edit_roles.execute(
-                            f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES(?,?,?,?,?)",
-                            ((int(max(num) + 1)), self.word_sep_l[1].lower(), self.word_sep_l[2], self.word_sep_l[3], self.word_sep_l[4]))
-                        BDROLES.commit()
-                        send("Создано")
-                    if self.word_sep[2] == 'update':
-                        edit_roles.execute(
-                            f"UPDATE '{str(respondent.object['peer_id'])}' SET emoji_1 = ?, txt = ?, emoji_2 = ? where command = ?",
-                            (self.word_sep_l[2], self.word_sep_l[3], self.word_sep_l[4], self.word_sep_l[1].lower()))
-                        BDROLES.commit()
-                        send("Обновлено")
-                if len(self.word_sep_l) == 2:
-                    if self.word_sep[2] == 'delete':
-                        edit_roles.execute(
-                            f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN ({to_tuple(self.word_sep_l[1].split(sep=' '))})")
-                        BDROLES.commit()
-                        send("Удалено")
-                if self.word_sep[2] == 'list':
-                    edit_roles.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
-                    list_words = edit_roles.fetchall()
-                    ss = BD_LIST(list_words)
-                    send(ss)
-            #except Exception as e:
-            #    send(f"Не успешно: {e}")
-        BDROLES.close()
-
-    def quote(self):
-        BDQUOTES = sqlite3.connect('peers_quotes.db')
-        edit_quotes = BDQUOTES.cursor()
-        edit_quotes.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}' ")
-        num = BD_COUNT(edit_quotes, 0)
-        try:
-            if len(self.word_sep_l) == 2:
-                if len(self.word_sep) == 3:
-                    if self.word_sep[2] == 'create':
-                        edit_quotes.execute(f"INSERT OR IGNORE INTO '{str(respondent.object['peer_id'])}' VALUES(?,?)",
-                                            ((int(max(num) + 1)), self.word_sep_l[1]))
-                        BDQUOTES.commit()
-                        send("Создано")
-                    if self.word_sep[2] == 'delete':
-                        edit_quotes.execute(
-                            f"DELETE FROM '{str(respondent.object['peer_id'])}' where id IN ({to_tuple(self.word_sep_l[1].split(sep=' '))})")
-                        BDQUOTES.commit()
-                        send("Удалено")
-                if len(self.word_sep) == 4:
-                    if self.word_sep[2] == 'update' and self.word_sep[3] == re.findall("[0-9]{1,999}", self.word_sep[3])[0]:
-                        edit_quotes.execute(f"UPDATE '{str(respondent.object['peer_id'])}' SET quote = ? where id = ?",
-                                            (self.word_sep_l[1], self.word_sep[3]))
-                        BDQUOTES.commit()
-                        send("Обновлено")
-            if self.word_sep[2] == 'list':
-                edit_quotes.execute(f"SELECT * FROM '{str(respondent.object['peer_id'])}'")
-                list_words = edit_quotes.fetchall()
-                s = BD_LIST(list_words)
-                send(s)
-        except Exception as e:
-            send(f"Не успешно: {e}")
-        BDQUOTES.close()
-
-
-
 def manager_f():
     lines = str(respondent.object['text']).splitlines()
-    word_sep = str(lines[0]).split(sep=' ', maxsplit=3)
-    mgr = manager(lines,word_sep)
+    word_sep = str(lines[0]).split(sep=' ', maxsplit=4)
+    #наполнение
+    for add in range(5):
+        if len(lines) < 5: lines.append('')
+        if len(word_sep) < 5: word_sep.append('')
 
-    if word_sep[1] == 'word':
-            mgr.word()
-    if word_sep[1] =='role':
-            mgr.role()
-    if word_sep[1] =='quote':
-            mgr.quote()
-
+    mgr = manager(lines,word_sep,[len(lines),len(word_sep)],respondent.object['peer_id'])
+    bcfg = base_config( word_sep, respondent.object['from_id'],respondent.object['peer_id'])
+    arg2 = {
+        'word': mgr.word,
+        'role': mgr.role,
+        'quote': mgr.quote,
+        #options
+        'json-edit': bcfg.edit,
+        'json-show': bcfg.show,
+        'json-params': bcfg.info_param,
+        'json-pe': bcfg.add_info,
+    }
+    if word_sep[1] in arg2:
+        arg2.get(word_sep[1])()
 
 ################################### вк бот ################################################
 def vk_bot_respondent():
-    global i, respondent , peerID, who , tag, tag_id
+    global i, respondent , peerID, who , tag, tag_id,data
+    if not os.path.isfile(config_file_json):
+        write_file_json(config_file_json,data)
     BD = sqlite3.connect('peers.db')
     edit = BD.cursor()
     edit.execute("""CREATE TABLE IF NOT EXISTS peers( peer_id INT PRIMARY KEY, e_g_mute TEXT,count_period INT); """)
     edit.execute("""CREATE TABLE IF NOT EXISTS nodes( peer_id INT PRIMARY KEY, tg_id INT); """)
+    edit.execute("""CREATE TABLE IF NOT EXISTS params_info( param TEXT PRIMARY KEY, info TEXT); """)
+    for e in read_file_json(config_file_json):
+        edit.execute(f"INSERT OR IGNORE INTO params_info VALUES('{e}','')")
     BD.commit()
 
     BDWORDS = sqlite3.connect('peers_words.db')
@@ -446,7 +247,7 @@ def vk_bot_respondent():
     BDQUOTES.commit()
 
     for respondent in longpoll.listen():
-        #try:
+        try:
             if respondent.type == VkBotEventType.MESSAGE_NEW:
                 i = i + 1
         ######################################### VK Event ########################################
@@ -486,6 +287,7 @@ def vk_bot_respondent():
         ################################ Словари для запрос-ответ #################################
                 command_service_text = {
                     '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
+                    '/id'              : "Твой ID : " + str(respondent.obj.from_id),
                     '/clear_docs_init' : clear_docs(), #очистка доков в группе
                     f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
                 }
@@ -526,8 +328,8 @@ def vk_bot_respondent():
                 if count_period !=0 and TEXT and i % count_period == 0 and quotes != []:  send(random.choice(quotes))
                 if TEXT : EVIL_GOD()
             ###########################################################################################
-        #except Exception as e:
-        #    send(f"{e}")
+        except Exception as e:
+            send(f"{e}")
 ############################ отправка в чат телеги из вк ##################################
 
 def vk_bot_resend():
@@ -572,15 +374,15 @@ def vk_bot_resend():
                             bot.send_photo(node, get(att['sticker']['images'][2]['url']).content, tb1)
                 ###########################################################################################
                         elif att['type'] == 'doc':  # Если прислали документ
-                            tb1 += (f"{str(att['doc']['url']).replace('no_preview=1', '')}\n_____________________________________________________")
+                            tb1 += f"{str(att['doc']['url']).replace('no_preview=1', '')}\n_____________________________________________________"
                             SendTG(node,tb1)
                 ###########################################################################################
                         elif att['type'] == 'video':
-                            tb1 += (f"https://vk.com/video{att['video']['owner_id']}_{att['video']['id']}\n\n_____________________________________________________")
+                            tb1 += f"https://vk.com/video{att['video']['owner_id']}_{att['video']['id']}\n\n_____________________________________________________"
                             SendTG(node,tb1)
                 ###########################################################################################
                         elif att['type'] == 'audio':
-                            tb1 += (f"https://vk.com/audio{att['audio']['owner_id']}_{att['audio']['id']}\n")
+                            tb1 += f"https://vk.com/audio{att['audio']['owner_id']}_{att['audio']['id']}\n"
                             duration = int(att['audio']['duration'])
                             info = (f"_____________________________________________________\n"
                            f"{att['audio']['artist']} - {att['audio']['title']} {att['audio'].get('subtitle', '')}"       
@@ -590,7 +392,7 @@ def vk_bot_resend():
                             except: SendTG(node, tb1 + info)
                 ###########################################################################################
                         elif att['type'] == "link":  # Если прислали ссылку(напиример: на историю)
-                            tb1 += (f"\n\n{att['link']['url']}\n_____________________________________________________")
+                            tb1 += f"\n\n{att['link']['url']}\n_____________________________________________________"
                             SendTG(node,tb1)
                 ###########################################################################################
                         elif att['type'] == 'wall':  # Если поделились постом
@@ -656,6 +458,33 @@ def vk_bot_resend():
             vk.messages.send(random_id=0, message=f"{e}", peer_id=resend.obj.peer_id)
 ############################ отправка в чат вк из телеги ##################################
 def vkNode():
+ try:
+    @bot.message_handler(commands=['id'])
+    def show_id(message):
+        bot.send_message(message.chat.id, message.chat.id)
+
+    @bot.message_handler(commands=['online'])
+    def show_online(message):
+        BD = sqlite3.connect('peers.db')
+        edit = BD.cursor()
+        edit.execute(f"SELECT peer_id FROM nodes WHERE tg_id = {message.chat.id}")
+        peer = edit.fetchone()
+        node = None
+        fields = ''
+        if peer is not None: node = peer[0]
+        if node is not None:
+            info = vk.users.get(user_ids=GetMembers(node)[0],fields=['first_name','last_name','online','last_seen'])
+            for field in info:
+                online = '✅ONLINE' if field['online'] == 1 else '❌OFFLINE'
+                get_seen = field.get('last_seen', None)
+                if get_seen is not None :
+                    get_seen = f" C {datetime.fromtimestamp(get_seen['time'])} через " \
+                               f"{platforms.get(get_seen['platform'])}" if online == '❌OFFLINE' else f"{platforms.get(get_seen['platform'])}"
+                else: get_seen = ''
+                fields += f"{field['first_name']} {field['last_name']} - {online} {get_seen}\n\n"
+            bot.send_message(message.chat.id,fields)
+        else: bot.send_message(message.chat.id,"Этот чат не имеет привязки к вк чату")
+
     @bot.message_handler(content_types=['text','video','photo','document','animation','sticker','audio'])
     def TG_VK(message):
         BD = sqlite3.connect('peers.db')
@@ -764,6 +593,13 @@ def vkNode():
                     logging.info(f"\n{idsticker}.png\n{sticker}\n")
                     vk.messages.send(random_id=random.randint(0, 999999), message='',peer_id=node, attachment=sticker)
                     os.remove(f"{idsticker}.png")
+                #else:
+                #    in_= f"pylottie/{idsticker+'.tgs'}"
+                #    out = idsticker
+                #    write_file(in_, bot.download_file((bot.get_file(idsticker)).file_path))
+                #    file = TGS_TO_GIF([in_],[out])
+                #    print(file)
+
             if message.audio:
                 idaudio = message.audio.file_id
                 write_file(idaudio + '.mp3',bot.download_file((bot.get_file(idaudio)).file_path))
@@ -774,3 +610,5 @@ def vkNode():
                 vk.messages.send(random_id=random.randint(0, 999999), message='', peer_id=node, attachment=msg_voice)
                 os.remove(f"{idaudio}.mp3")
     bot.polling(none_stop=True, interval=0)
+ except Exception as e:
+     vk.messages.send(random_id=0, message=f"{e}", peer_id=PEER_CRUSH_EVENT)

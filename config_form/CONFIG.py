@@ -1,22 +1,26 @@
-﻿################# API-ключи ###############################
+﻿from tools import read_file_json
+################# API-ключи ###############################
+
 vktokenGroup=""
-vktokenUser=""
+vktokenUser= ''
 teletoken=""
 full_permission_user_token = ""
-################## id групп ###############################
+
+################## основное для работы ###############################
 IdGroupVK=
+ADMIN_JSON_CONFIG = []
+config_file_json = 'CONFIG.json'
 
-idGroupTelegram= # Общий канал для незарегистрированных чатов (которых нет в Nodes)
-
-################## Адреса для уведомлений о падении и тд ###############################
-PEER_CRUSH_EVENT = 
-CAPTCHA_EVENT =
-OWNER_ALBUM_PHOTO =
-ID_ALBUM_PHOTO =
-#2000000001
-############################### Списки и строки ###############################
-users_list_warn = " @  " #теги оповещения в вк о падении
-EVIL_GODS = [388145277]
+#///////////////////////изменяемые данные///////////////////////#
+################## Адреса ###############################
+idGroupTelegram =  read_file_json(config_file_json)['idGroupTelegram'] # Общий канал для незарегестрированных чатов
+PEER_CRUSH_EVENT =  read_file_json(config_file_json)['PEER_CRUSH_EVENT']
+CAPTCHA_EVENT =  read_file_json(config_file_json)['PEER_CRUSH_EVENT']
+OWNER_ALBUM_PHOTO =  read_file_json(config_file_json)['PEER_CRUSH_EVENT']
+################## Списки и строки ###############################
+users_list_warn = read_file_json(config_file_json)['users_list_warn'] #теги оповещения в вк о падении
+EVIL_GODS = read_file_json(config_file_json)['EVIL_GODS']
+#///////////////////////изменяемые данные///////////////////////#
 
 
 ###################### MIME типы файлов для отправки в вк (документы) ####################
