@@ -11,12 +11,14 @@ types = {
 }
 
 class manager(object):
-    def __init__(self,word_sep_l,word_sep,fact,peer):
+    def __init__(self,word_sep_l,word_sep,peer):
         try:
             self.peer = peer
             self.word_sep_l = word_sep_l #число строк
             self.word_sep = word_sep #число слов в 1 строке
-            self.len_word_list = ((fact[0], fact[1]), word_sep[2]) # фактическая длинна слов в 1 строке и строк в общем
+            self.fact = filter(lambda a: a != '',self.word_sep) # фактическая длинна слов в 1 строке
+            self.fact_l = filter(lambda a: a != '', self.word_sep_l) # фактическая длинна строк в общем
+            self.len_word_list = ((len(list(self.fact_l)), len(list(self.fact))), word_sep[2]) # фактическая длинна fact + fact_l
         except:
             self.peer = peer
             self.word_sep_l = word_sep_l
@@ -70,6 +72,7 @@ class manager(object):
                                  f"where command = {to_tuple(self.word_sep_l[1].splitlines()).lower()}", "Обновлено"),
             ((1, 3), 'list'): ('', get_BD_list(edit_roles, f"SELECT * FROM '{str(self.peer)}'"))
         }
+        print(self.len_word_list)
         if self.len_word_list in roles:
             key = roles.get(self.len_word_list)
             edit_roles.execute(key[0])

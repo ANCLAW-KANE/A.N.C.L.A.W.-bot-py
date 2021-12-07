@@ -205,7 +205,7 @@ def manager_f():
         if len(lines) < 5: lines.append('')
         if len(word_sep) < 5: word_sep.append('')
 
-    mgr = manager(lines,word_sep,[len(lines),len(word_sep)],respondent.object['peer_id'])
+    mgr = manager(lines,word_sep,respondent.object['peer_id'])
     bcfg = base_config( word_sep, respondent.object['from_id'],respondent.object['peer_id'])
     arg2 = {
         'word': mgr.word,
