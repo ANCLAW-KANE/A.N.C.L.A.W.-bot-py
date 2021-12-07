@@ -114,7 +114,6 @@ class base_config(object):
         self.peer = peer
         self.len_arg_array = len(self.arg_array)
         self.BD = sqlite3.connect('peers.db')
-        self.edit = self.BD.cursor()
         self.data = read_file_json(config_file_json)
 
     def edit(self):
@@ -142,23 +141,25 @@ class base_config(object):
             s+=f"{e} : {self.data.get(e)}\n"
         send_to_specific_peer(s,self.peer)
     def info_param(self):
+        edit = self.BD.cursor()
         s = ''
-        self.edit.execute(f"SELECT * FROM params_info")
-        for e in self.edit.fetchall():
+        edit.execute(f"SELECT * FROM params_info")
+        for e in edit.fetchall():
             s+=f"{e[0]} - {e[1]}\n"
         send_to_specific_peer(s,self.peer)
         self.BD.close()
     def add_info(self):
-        edit = {
+        edit = self.BD.cursor()
+        edits = {
             (5,'create'):(f"INSERT OR IGNORE INTO params_info VALUES('{self.arg[3]}',"
                           f" '{self.arg[4]}')","Описание параметра создано"),
             (5,'update'):(f"UPDATE params_info SET info = '{self.arg[4]}' "
                           f"WHERE param = '{self.arg[3]}'","Описание параметра обновлено")
         }
-        if self.len_arg in edit:
-            self.edit.execute(edit.get(self.len_arg)[0])
+        if self.len_arg in edits:
+            edit.execute(edits.get(self.len_arg)[0])
             self.BD.commit()
-            send_to_specific_peer(edit.get(self.len_arg)[1],self.peer)
+            send_to_specific_peer(edits.get(self.len_arg)[1],self.peer)
 
 
 
