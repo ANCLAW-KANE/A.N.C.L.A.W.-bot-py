@@ -1,230 +1,25 @@
-﻿import random, logging,os, magic, re, math , time , requests,sqlite3
-from tools import write_file, convert_img, write_file_json,read_file_json
-from online_tools import kick,getUserName,RandomMember,GetMembers,get_list_album,GET_CHAT_TITLE,SendTG,clear_docs
-from sessions import longpoll, vk, vk_full,vk_user,bot,longpoll_full,upload
-from managers import manager, base_config
+﻿import random, logging,os,mimetypes as mtps, magic , time , requests,sqlite3
+from tools import write_file, convert_img, write_file_json,read_file_json,json_gen
+from online_tools import getUserName,GetMembers,GET_CHAT_TITLE,SendTG,send_to_specific_peer
+from respondent_func import WHO,COMMAND,privileges
+from sessions import longpoll, vk,bot,longpoll_full,upload,size_values,tab,platforms
 from datetime import datetime
-import mimetypes as mtps
 from requests import get
 from vk_api.bot_longpoll import  VkBotEventType
-from CONFIG import idGroupTelegram , IdGroupVK ,types , OWNER_ALBUM_PHOTO,PEER_CRUSH_EVENT,\
-    EVIL_GODS,config_file_json
+from CONFIG import  IdGroupVK ,types ,config_file_json
 
 ################### Логирование ###########################
-
-
 file_log = logging.FileHandler('Log.log', 'a', 'utf-8')
 console_out = logging.StreamHandler()
-logging.basicConfig(
-    handlers=(file_log, console_out),
-    format=u'[%(asctime)s | %(levelname)s]: %(message)s',
-    datefmt='%m.%d.%Y %H:%M:%S',
-    level=logging.INFO
-)
-################ Служебные переменные #####################
+logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(levelname)s]: %(message)s',
+                    datefmt='%m.%d.%Y %H:%M:%S', level=logging.INFO)
 i = 0
-tag = ''
-
-size_values = list("smxopqryzw")
-tab = {
-    'chat_kick_user': '⚠⚠⚠ УДАЛЕН',
-    'chat_invite_user': '⚠⚠⚠ ДОБАВЛЕН',
-    'chat_invite_user_by_link': '⚠⚠⚠ ПРИГЛАШЕН ПО ССЫЛКЕ',
-}
-
-data = {
-    'idGroupTelegram' : 0,
-    'PEER_CRUSH_EVENT' : 0,
-    'CAPTCHA_EVENT' : 0,
-    'OWNER_ALBUM_PHOTO' : 0,
-    'users_list_warn' : [],
-    'EVIL_GODS' : []
-}
-platforms = {
-    1 : 'мобильная версия сайта',
-    2 : 'iPhone',
-    3 : 'iPad',
-    4 : 'Android',
-    5 : 'Windows Phone',
-    6 : 'Windows 10',
-    7 : 'полная версия сайта'
-}
-
-################################## Блок функций #######################################
-
-def send(msg):
-    vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=respondent.object.peer_id)
-
-def send_attachments(att,text):
-    vk.messages.send(random_id=random.randint(0, 999999), message=text, peer_id=respondent.object.peer_id,attachment=att)
-
-def get_album_photos_mem():
-        try:
-            offset_max = 0
-            parse_album = str(random.choice(get_list_album())).split(sep='_')
-            if int(parse_album[1]) > 50: offset_max = math.floor(int(parse_album[1]) / 50)
-            if parse_album[1] != '0':
-                alb_ph = vk_user.photos.get(owner_id=OWNER_ALBUM_PHOTO, album_id=parse_album[0], count=50 , offset=random.randint(0,offset_max) * 50)
-                photoList = []
-                for photo in alb_ph['items']:
-                    idphoto = str(photo['id'])
-                    photoList.append(idphoto)
-                if photoList is not None: return send_attachments(f"photo{str(OWNER_ALBUM_PHOTO)}_{random.choice(photoList)}",'')
-        except Exception as e : return send_attachments('photo388145277_456240127',f'блядь я мем пробухал\n {e}')
-
-def WHO(object,get_sender):
-    s = str(object).lower().split(maxsplit=1)
-    if len(s) == 2 and object[0] !='/':
-            comm = []
-            BDROLES = sqlite3.connect('peers_roles.db')
-            edit_roles = BDROLES.cursor()
-            edit_roles.execute(f"SELECT command FROM '{respondent.object['peer_id']}'")
-            commands = edit_roles.fetchall()
-            for command in commands:
-                comm.append(f"!{command[0]}")
-            tag = re.compile('@(\w+)').search(s[1])
-            ss = s[0] + ' ' + s[1]
-            if s[0] == "!кто" and s[1] is not None:
-                srs = "❓ ➡➡➡  " + RandomMember(respondent.object.peer_id) + '  ⬅⬅⬅  :  ' + s[1]
-            elif s[0] == "!вероятность" and s[1] is not None:
-                srs = "📊 Вероятность для  (" + s[1] + ') : ' + str(random.randint(0,100)) +'%'
-            elif s[0] == "!забив" and tag:
-                srs = "📣🐖   Забив : \n\n"+ "🇺🇦" + get_sender + "🇺🇦        🆚        ✡" + s[1] + '✡\n\n🏆   Победил: ' \
-                      + random.choice([get_sender , tag.group(0)]) + "   🏆"
-            elif s[0] == "!факт" and s[1] is not None:
-                srs = "❗ Факт (" + s[1] + ") " + random.choice(['Ложь ⛔', 'Правда ✅'])
-            elif s[0] in comm and tag:
-                edit_roles.execute(f"SELECT emoji_1, txt, emoji_2 FROM '{respondent.object['peer_id']}' where command = " f"'{s[0].replace('!','')}'")
-                key = edit_roles.fetchall()[0]
-                srs = f"{key[0]}   {get_sender}  {key[1]}  {tag.group(0)}  {key[2]}"
-            else:
-                ss = None
-                srs = None
-    else:
-        ss = None
-        srs = None
-    return [ss,srs]
-
-def KILL_ALL_MEMBERS():
-        list_members = GetMembers(respondent.object.peer_id)[1]
-        for member in list_members:
-            kick(chat_id= respondent.object['peer_id'] - 2000000000, member_id=member)
-
-def manager_kick():
-    two_word_sep = str(respondent.object['text']).split(sep=' ',maxsplit=1)
-    try:
-        if len(two_word_sep) == 2:
-            tag = re.compile('@(\w+)').search(two_word_sep[1])
-            tag_id = two_word_sep[1].split(sep='|')[0].replace('[id', '')
-            if two_word_sep[0] == '/кик' and tag:  kick(chat_id=peerID - 2000000000, member_id=tag_id)
-        else:
-            rpl = (respondent.object).get('reply_message', False)
-            if rpl:  kick(chat_id=peerID - 2000000000, member_id=respondent.object.reply_message['from_id'])
-    except Exception as e:
-         send(f"НЕЛЬЗЯ МУДИЛА \n{e}")
-
-def invite_user():
-    three_word_sep = str(respondent.object['text']).split(sep=' ', maxsplit=2)
-    try:
-        if len(three_word_sep) == 3 and three_word_sep[0] == '/addUser' and three_word_sep[1] == re.findall("[0-9]{1,10}",three_word_sep[1])[0] and three_word_sep[2]==re.findall("[0-9]{1,10}",three_word_sep[2])[0]:
-            vk_full.messages.addChatUser(chat_id=three_word_sep[1],user_id=three_word_sep[2])
-    except Exception as e:
-         send(f"НЕЛЬЗЯ МУДИЛА \n{e}")
-
-def EVIL_GOD_Update():
-    if respondent.object['from_id'] in EVIL_GODS:
-        BD = sqlite3.connect('peers.db')
-        edit = BD.cursor()
-        edit.execute(f"SELECT * FROM peers WHERE peer_id = {respondent.object['peer_id']}")
-        str_E_G = edit.fetchone()
-        if str_E_G[1] == '0':
-            str_E_G = '1'
-            send('Безмолвие')
-        else:
-            str_E_G = '0'
-            send('*Уходит*')
-        edit.execute("UPDATE peers SET e_g_mute = ? where peer_id = ?",(str_E_G,respondent.object['peer_id']))
-        BD.commit()
-
-def EVIL_GOD():
-    BD = sqlite3.connect('peers.db')
-    edit = BD.cursor()
-    edit.execute(f"SELECT * FROM peers WHERE peer_id = {respondent.object['peer_id']}")
-    str_E_G = edit.fetchone()
-    if respondent.object['from_id'] not in EVIL_GODS and str_E_G[1] == '1':
-        vk.messages.delete(peer_id = respondent.object['peer_id'],conversation_message_ids = respondent.object['conversation_message_id'],group_id=IdGroupVK,delete_for_all=1)
-
-def set_count_period():
-    two_word_sep = str(respondent.object['text']).split(sep=' ', maxsplit=1)
-    if len(two_word_sep) == 2 and two_word_sep[1] == re.findall("[0-9]{1,3}",two_word_sep[1])[0]:
-        BD = sqlite3.connect('peers.db')
-        edit = BD.cursor()
-        edit.execute("UPDATE peers SET count_period = ? where peer_id = ?", (int(two_word_sep[1]), respondent.object['peer_id']))
-        BD.commit()
-        send(f"Значение установлено на {two_word_sep[1]}")
-
-def edit_node():
-    if respondent.object['peer_id'] < 2000000000 and respondent.object['peer_id'] in EVIL_GODS:
-        BD = sqlite3.connect('peers.db')
-        edit = BD.cursor()
-        word_sep = str(respondent.object['text']).split(sep=' ', maxsplit=3)
-        if len(word_sep) == 4:
-            if word_sep[2] == re.findall("[0-9]{1,10}",word_sep[2])[0] and word_sep[3] == re.findall("-[0-9]{9,13}",word_sep[3])[0]:
-                try:
-                    if word_sep[1] == 'create':
-                        edit.execute("INSERT OR IGNORE INTO nodes VALUES(?,?)", (int(word_sep[2]), int(word_sep[3])))
-                        BD.commit()
-                        send("Соединено")
-                    if word_sep[1] == 'update':
-                        edit.execute("UPDATE nodes SET tg_id = ? where peer_id = ?",(int(word_sep[3]),int(word_sep[2])))
-                        BD.commit()
-                        send("Обновлено")
-                    if word_sep[1] == 'delete':
-                        edit.execute("DELETE FROM nodes where peer_id = ? and tg_id = ?", (int(word_sep[2]), int(word_sep[3])))
-                        BD.commit()
-                        send("Удалено")
-                except Exception as e:
-                    send(f"Не успешно: {e}")
-        if len(word_sep) == 2:
-            if word_sep[1] == 'list':
-                edit.execute("SELECT * FROM nodes")
-                list_nodes= edit.fetchall()
-                s = ''
-                n = 0
-                for node in list_nodes:
-                    n=n+1
-                    s += f"{n}: {node[0]} {node[1]}\n"
-                send(s)
-        BD.close()
-
-def manager_f():
-    lines = str(respondent.object['text']).splitlines()
-    word_sep = str(lines[0]).split(sep=' ', maxsplit=4)
-    #наполнение
-    for add in range(5):
-        if len(lines) < 5: lines.append('')
-        if len(word_sep) < 5: word_sep.append('')
-
-    mgr = manager(lines,word_sep,respondent.object['peer_id'])
-    bcfg = base_config( word_sep, respondent.object['from_id'],respondent.object['peer_id'])
-    arg2 = {
-        'word': mgr.word,
-        'role': mgr.role,
-        'quote': mgr.quote,
-        #options
-        'json-edit': bcfg.edit,
-        'json-show': bcfg.show,
-        'json-params': bcfg.info_param,
-        'json-pe': bcfg.add_info,
-    }
-    if word_sep[1] in arg2:
-        arg2.get(word_sep[1])()
 
 ################################### вк бот ################################################
 def vk_bot_respondent():
-    global i, respondent , peerID, who , tag, tag_id,data
+    global i, respondent , peerID, who
     if not os.path.isfile(config_file_json):
-        write_file_json(config_file_json,data)
+        write_file_json(config_file_json,json_gen().return_json())
     BD = sqlite3.connect('peers.db')
     edit = BD.cursor()
     edit.execute("""CREATE TABLE IF NOT EXISTS peers( peer_id INT PRIMARY KEY, e_g_mute TEXT,count_period INT); """)
@@ -253,7 +48,7 @@ def vk_bot_respondent():
         ######################################### VK Event ########################################
                 TEXT = respondent.object['text']
                 peerID = respondent.object['peer_id']
-                if respondent.object.from_id > 0: who = WHO(TEXT,getUserName(respondent.object.from_id))
+                from_id = respondent.object['from_id']
                 lines = str(TEXT).lower().splitlines()
                 TextSplitLowerDict = set('')
                 if lines: TextSplitLowerDict = set(lines[0].split())
@@ -265,71 +60,53 @@ def vk_bot_respondent():
                 BD.commit()
 
                 #Частота рандомных ответов
-                edit.execute(f"SELECT * FROM peers WHERE peer_id = {respondent.object['peer_id']}")
+                edit.execute(f"SELECT * FROM peers WHERE peer_id = {peerID}")
                 count_period = int(edit.fetchone()[2])
 
                 #Шаблонные ответы
-                edit_word.execute(f"CREATE TABLE IF NOT EXISTS '{str(respondent.object['peer_id'])}' ( id INT, key TEXT PRIMARY KEY, val TEXT);")
+                edit_word.execute(f"CREATE TABLE IF NOT EXISTS '{str(peerID)}' ( id INT, key TEXT PRIMARY KEY, val TEXT);")
                 BDWORDS.commit()
-                edit_word.execute(f"SELECT key,val FROM '{str(respondent.object['peer_id'])}' ")
+                edit_word.execute(f"SELECT key,val FROM '{str(peerID)}' ")
                 words = edit_word.fetchall()
                 for word in words:
                     Dictwords.append(word[0])
 
                 #ролевые команды
-                edit_roles.execute(f"CREATE TABLE IF NOT EXISTS '{str(respondent.object['peer_id'])}' ( id INT PRIMARY KEY, command TEXT ,emoji_1 TEXT, txt TEXT, emoji_2 TEXT);")
+                edit_roles.execute(f"CREATE TABLE IF NOT EXISTS '{str(peerID)}' ( id INT PRIMARY KEY, command TEXT ,emoji_1 TEXT, txt TEXT, emoji_2 TEXT);")
 
                 #Рандомные высказывания бота
-                edit_quotes.execute(f"CREATE TABLE IF NOT EXISTS '{str(respondent.object['peer_id'])}' ( id INT PRIMARY KEY, quote TEXT);")
+                edit_quotes.execute(f"CREATE TABLE IF NOT EXISTS '{str(peerID)}' ( id INT PRIMARY KEY, quote TEXT);")
                 BDQUOTES.commit()
-                edit_quotes.execute(f"SELECT quote FROM '{str(respondent.object['peer_id'])}'")
+                edit_quotes.execute(f"SELECT quote FROM '{str(peerID)}'")
                 quotes = edit_quotes.fetchall()
         ################################ Словари для запрос-ответ #################################
-                command_service_text = {
-                    '/idchat'          : "ID чата : " + str(peerID), #узнать ID чата
-                    '/id'              : "Твой ID : " + str(respondent.obj.from_id),
-                    '/clear_docs_init' : clear_docs(), #очистка доков в группе
-                    f"{who[0]}"        : f"{who[1]} ", #Команда на вероятности и выбор
-                }
-                command_service_func = {
-                    '/кик': manager_kick,
-                    '/мем': get_album_photos_mem,
-                    '/cabal:kill_all_members=active': KILL_ALL_MEMBERS,
-                    '/addUser': invite_user,
-                    '*присутствие_злого_бога*': EVIL_GOD_Update,
-                    '/частота': set_count_period,
-                    '/node': edit_node,
-                    '/settings': manager_f
+                prefix = {
+                    '*': privileges(TEXT,from_id,peerID,respondent.object).check(),
+                    '!': WHO(TEXT,from_id,peerID).WHO_GET(),
+                    '/': COMMAND(TEXT,from_id,peerID,respondent.object).check()
                 }
         ############################### Обработка ######################################
-            ################## Выбор значения по ключу из command ##################
                 if TEXT is not '':
-                    if str(TEXT)[0] != '/':
+                    privileges(TEXT,from_id,peerID,respondent.object).EVIL_GOD()
+                    if str(TEXT)[0] != '/' or '*' or '!':
                         dw = dict(words)
                         if set(lines) & set(Dictwords):
                             for element in lines:
                                 key = dw.get(element)
-                                if key is not None: send(key)
+                                if key is not None: send_to_specific_peer(key,peerID)
                         elif TextSplitLowerDict & set(Dictwords):
                             for element in TextSplitLowerDict:
                                 key = dw.get(element)
-                                if key is not None: send(key)
+                                if key is not None: send_to_specific_peer(key,peerID)
+                    if TEXT[0] in prefix:
+                        key1 = prefix.get(TEXT[0])
+                        if key1 is not None: key1()
 
-
-            ################## Выбор значения по ключу из command_service (команды функций с возвратом текста) ##################
-                if TEXT in command_service_text:
-                    key1 = command_service_text.get(TEXT)
-                    if key1 is not None: send(key1)
-            ################## Выбор значения по ключу из command_service (команды функций с исполнением) ##################
-                if str(TEXT).split(sep=' ')[0] in command_service_func:
-                    key2 = command_service_func.get(str(TEXT).split(sep=' ')[0])
-                    if key2 is not None: key2()
-
-                if count_period !=0 and TEXT and i % count_period == 0 and quotes != []:  send(random.choice(quotes))
-                if TEXT : EVIL_GOD()
+                if count_period !=0 and TEXT and \
+                    i % count_period == 0 and quotes != []:  send_to_specific_peer(random.choice(quotes),peerID)
             ###########################################################################################
         except Exception as e:
-            send(f"{e}")
+            send_to_specific_peer(f"{e}",peerID)
 ############################ отправка в чат телеги из вк ##################################
 
 def vk_bot_resend():
@@ -344,7 +121,7 @@ def vk_bot_resend():
                 edit.execute(f"SELECT tg_id FROM nodes WHERE peer_id = {resend.object['peer_id']}")
                 tg_id = edit.fetchone()
                 if tg_id is not None: node = tg_id[0]
-                else: node = idGroupTelegram
+                else: node = json_gen().return_config_file_json()['idGroupTelegram']
                 #######################################################################################
                 UserId = resend.object['from_id']
                 user = str(getUserName(UserId))
@@ -578,7 +355,8 @@ def vkNode():
                         ###########################################################################################
                     os.remove(namedocument)
                 except Exception as e:
-                    vk.messages.send(random_id=random.randint(0, 999999), message= e,peer_id=PEER_CRUSH_EVENT)
+                    vk.messages.send(random_id=random.randint(0, 999999), message= e,
+                                     peer_id=json_gen().return_config_file_json()['PEER_CRUSH_EVENT'])
                     SendTG(message.chat.id,'\n⚠⚠⚠ Ошибка загрузки ⚠⚠⚠')
             ###########################################################################################
             if message.sticker:
@@ -611,4 +389,4 @@ def vkNode():
                 os.remove(f"{idaudio}.mp3")
     bot.polling(none_stop=True, interval=0)
  except Exception as e:
-     vk.messages.send(random_id=0, message=f"{e}", peer_id=PEER_CRUSH_EVENT)
+     vk.messages.send(random_id=0, message=f"{e}", peer_id=json_gen().return_config_file_json()['PEER_CRUSH_EVENT'])

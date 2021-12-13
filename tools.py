@@ -1,6 +1,6 @@
 import json
 from PIL import Image
-
+from CONFIG import config_file_json
 ################################ TOOLS ##############################################
 
 def to_tuple(object):
@@ -27,12 +27,15 @@ def BD_COUNT(get_,on_index):
     if not num: num.append(0)
     return num
 
-def BD_LIST(get_):
+def BD_LIST(get_,sep):
     ss = ''
     for word in get_:
         s = ''
-        for ii in word:
-            s += f" - {ii}"
+        for ii in range(len(word)):
+            if ii == 0:
+                s += f"{word[ii]}"
+            else:
+                s += f" {sep} {word[ii]}"
         ss += f"{s}\n"
     if ss == '': ss = 'Ничего нет'
     return ss
@@ -48,11 +51,49 @@ def convert_img(input,output_name,convert_to):
     ipng = Image.open(input).convert()
     ipng.save(output_name,convert_to)
 
-def get_BD_list(obj,query):
+def get_BD_list(obj,query,sep):
     obj.execute(query)
     list_words = obj.fetchall()
-    ss = BD_LIST(list_words)
+    ss = BD_LIST(list_words,sep)
     return ss
+
+def join_dict_keys(arg):
+    args = []
+    for a in arg:
+        args += list(a.keys())
+    return args
+
+def join_dict(arg):
+    args = []
+    for a in arg:
+        args += list(a.items())
+    return dict(args)
 
 #def TGS_TO_GIF(in_,out):
 #    pylottie.convertMultLottie2GIF(in_,out)
+
+class json_gen:
+    def __init__(self):
+        self.dictionary =  {
+                'idGroupTelegram' : 0,
+                'PEER_CRUSH_EVENT' : 0,
+                'CAPTCHA_EVENT' : 0,
+                'OWNER_ALBUM_PHOTO' : 0,
+                'users_list_warn' : [],
+                'EVIL_GODS' : []
+            }
+    def return_json(self):
+        return self.dictionary
+
+    def return_config_file_json(self):
+        config = {
+        ################## Целое число ###############################
+        'idGroupTelegram' : read_file_json(config_file_json)['idGroupTelegram'],#Общий канал для незарегестрированных чатов
+        'PEER_CRUSH_EVENT' : read_file_json(config_file_json)['PEER_CRUSH_EVENT'],
+        'CAPTCHA_EVENT' : read_file_json(config_file_json)['CAPTCHA_EVENT'],
+        'OWNER_ALBUM_PHOTO' : read_file_json(config_file_json)['OWNER_ALBUM_PHOTO'],
+        ################## Списки и строки ###############################
+        'users_list_warn' : read_file_json(config_file_json)['users_list_warn'],  # теги оповещения в вк о падении
+        'EVIL_GODS' : read_file_json(config_file_json)['EVIL_GODS'],
+        }
+        return config

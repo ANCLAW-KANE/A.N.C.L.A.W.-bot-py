@@ -1,5 +1,6 @@
 ﻿from multiprocessing import Process
-import Server , CONFIG
+import Server
+from tools import json_gen
 
 if __name__ == '__main__':
 
@@ -10,23 +11,24 @@ if __name__ == '__main__':
     thread_vkNode = Process(target=Server.vkNode,args=())
     thread_vkNode.start()
 
-
+    users_list_warn = json_gen().return_config_file_json()['users_list_warn']
+    PEER_CRUSH_EVENT = json_gen().return_config_file_json()['PEER_CRUSH_EVENT']
     thread_vk_bot_respondent.join()
     Server.vk.messages.send(random_id=Server.random.randint(0, 999999), message=f"WARNING : " 
-                                                                            f"{CONFIG.users_list_warn}"
+                                                                            f"{users_list_warn}"
                                                                             " Поток-RESPONDENT уничтожен",
-                                                                    peer_id=CONFIG.PEER_CRUSH_EVENT)
+                                                                    peer_id=PEER_CRUSH_EVENT)
     thread_vk_bot_resend.join()
     Server.vk.messages.send(random_id=Server.random.randint(0, 999999), message=f"WARNING : "
-                                                                            f"{CONFIG.users_list_warn}"
+                                                                            f"{users_list_warn}"
                                                                             " Поток-RESEND уничтожен",
-                                                                    peer_id=CONFIG.PEER_CRUSH_EVENT)
+                                                                    peer_id=PEER_CRUSH_EVENT)
 
     thread_vkNode.join()
     Server.vk.messages.send(random_id=Server.random.randint(0, 999999), message=f"WARNING : "
-                                                                            f"{CONFIG.users_list_warn}"
+                                                                            f"{users_list_warn}"
                                                                             " Поток-VkNode уничтожен",
-                                                                    peer_id=CONFIG.PEER_CRUSH_EVENT)
+                                                                    peer_id=PEER_CRUSH_EVENT)
     if thread_vk_bot_respondent.is_alive():
         thread_vk_bot_respondent.start()
     if thread_vk_bot_resend.is_alive():
