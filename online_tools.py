@@ -110,7 +110,7 @@ class SendTG(object):
         :param text: str
         :param att: [attachments]
         """
-        self.n = 2000
+        self.n = 1000
         self.method = method
         self.adress = adress
         self.log = log
