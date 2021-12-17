@@ -4,7 +4,7 @@ from tools import json_gen
 from managers import base_config,manager
 from sessions import vk,vk_user,vk_full
 from CONFIG import IdGroupVK
-
+######################################################################################################
 ######################################################################################################
 class privileges(object):
     def __init__(self, txt, sender, peer, obj):
@@ -13,7 +13,7 @@ class privileges(object):
         self.peer = peer
         self.obj = obj
         self.EVIL_GODS = json_gen().return_config_file_json()['EVIL_GODS']
-    ################## привелегия для удаления ообщений не админов(ультимативный мут) #################
+    ################## привелегия для удаления сообщений не админов(ультимативный мут) #################
     def EVIL_GOD(self):
         BD = sqlite3.connect('peers.db')
         edit = BD.cursor()
@@ -44,7 +44,7 @@ class privileges(object):
             edit.execute("UPDATE peers SET e_g_mute = ? where peer_id = ?", (str_E_G, self.peer))
             BD.commit()
             BD.close()
-
+    ######################################################################################################
     def check(self):
         privilege = {
             '*присутствие злого бога*':self.EVIL_GOD_Update,
@@ -52,7 +52,7 @@ class privileges(object):
         if self.txt in privilege:
             key = privilege.get(self.txt)
             if key is not None: key()
-
+######################################################################################################
 ######################################################################################################
 class WHO(object):
     def __init__(self,obj,sender,peer):
@@ -67,10 +67,10 @@ class WHO(object):
             self.name = f"@id{self.tag[0]}({getUserName(self.tag[0])})" \
                 if '@' in self.tag[1] \
                 else f"@id{self.tag[0]}({self.tag[1]})"
-        except:
+        except :
             self.tag = None
             self.name = None
-
+    ######################################################################################################
     def WHO_GET(self):
         if self.s_len == 2 and self.obj[0] != '/':
             ###################################### Сбор команд role #############################################
@@ -111,10 +111,10 @@ class Respondent_command(object):
         self.len_sep = len(self.sep)
         self.reply = self.OBJ.get('reply_message', False)
         self.OWNER_ALBUM_PHOTO = json_gen().return_config_file_json()['OWNER_ALBUM_PHOTO']
-
+    ######################################################################################################
     def send(self,msg):
         vk.messages.send(random_id=random.randint(0, 999999), message=msg, peer_id=self.PEER)
-
+    ######################################################################################################
     def send_attachments(self,text,att):
         vk.messages.send(random_id=random.randint(0, 999999), message=text, peer_id=self.PEER,attachment=att)
     #######################################/settings менеджер ######################################
@@ -209,7 +209,7 @@ class Respondent_command(object):
         for doc_ in docs:
             vk_user.docs.delete(owner_id='-'+ str(IdGroupVK),doc_id=doc_)
         self.send('Удаление завершено')
-
+######################################################################################################
 ######################################################################################################
 class COMMAND(object):
     def __init__(self,TEXT,_FROM,PEER,OBJ):
@@ -218,7 +218,7 @@ class COMMAND(object):
         self.PEER = PEER
         self.OBJ = OBJ
         self.CMD = str(self.TEXT).split(sep=' ')[0]
-
+    ##################################################################################
     def check(self):
         respond = Respondent_command(self.TEXT,self._FROM,self.PEER,self.OBJ)
         command = {
@@ -233,3 +233,4 @@ class COMMAND(object):
         if self.CMD in command:
             key = command.get(self.CMD)
             if key is not None: key()
+#############################################################################################################

@@ -22,7 +22,6 @@ vk_user = vk_session_user.get_api()
 
 vk_session_full : VkApi = vk_api.VkApi(token=full_permission_user_token,captcha_handler=captcha_handler)#VKME
 vk_full = vk_session_full.get_api()
-
 longpoll_full = VkBotLongPoll(vk_session_full, IdGroupVK)
 upload = vk_api.VkUpload(vk_full)
 api_audio = vk_api.audio.VkAudio(vk_session_full)
@@ -30,12 +29,6 @@ api_audio = vk_api.audio.VkAudio(vk_session_full)
 tag = ''
 
 size_values = list("smxopqryzw")
-
-tab = {
-    'chat_kick_user': '⚠⚠⚠ УДАЛЕН ',
-    'chat_invite_user': '⚠⚠⚠ ДОБАВЛЕН ',
-    'chat_invite_user_by_link': '⚠⚠⚠ ПРИГЛАШЕН ПО ССЫЛКЕ ',
-}
 
 platforms = {
     1 : 'мобильная версия сайта',

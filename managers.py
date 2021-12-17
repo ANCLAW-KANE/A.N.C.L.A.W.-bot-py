@@ -1,27 +1,29 @@
-import sqlite3,re
+import sqlite3, re
 
-from tools import BD_COUNT,to_tuple,get_BD_list,read_file_json,write_file_json,json_gen
+from tools import BD_COUNT, to_tuple, get_BD_list, read_file_json, write_file_json, json_gen
 from online_tools import send_to_specific_peer
-from CONFIG import config_file_json,ADMIN_JSON_CONFIG
+from CONFIG import config_file_json, ADMIN_JSON_CONFIG
 
 types = {
     'int': int,
     'string': str,
     'bool': bool,
-    'arr-int':lambda a: [int(a)]
+    'arr-int': lambda a: [int(a)]
 }
+
+
 ######################################################################################################
 class manager(object):
-    def __init__(self,word_sep_l,word_sep,from_,peer):
+    def __init__(self, word_sep_l, word_sep, from_, peer):
         self.peer = peer
         self.from_ = from_
-        self.word_sep_l = word_sep_l #число строк
-        self.word_sep = word_sep #число слов в 1 строке
-        self.fact = filter(lambda a: a != '',self.word_sep) # фактическая длинна слов в 1 строке
-        self.fact_l = filter(lambda a: a != '', self.word_sep_l) # фактическая длинна строк в общем
+        self.word_sep_l = word_sep_l  # число строк
+        self.word_sep = word_sep  # число слов в 1 строке
+        self.fact = filter(lambda a: a != '', self.word_sep)  # фактическая длинна слов в 1 строке
+        self.fact_l = filter(lambda a: a != '', self.word_sep_l)  # фактическая длинна строк в общем
         self.len_fact = len(list(self.fact))
         self.len_fact_l = len(list(self.fact_l))
-        self.len_word_list = ((self.len_fact_l, self.len_fact), word_sep[2]) # фактическая длинна fact + fact_l
+        self.len_word_list = ((self.len_fact_l, self.len_fact), word_sep[2])  # фактическая длинна fact + fact_l
         self.EVIL_GODS = json_gen().return_config_file_json()['EVIL_GODS']
 
     ######################################################################################################
@@ -29,24 +31,24 @@ class manager(object):
         BDWORDS = sqlite3.connect('peers_words.db')
         edit_word = BDWORDS.cursor()
         edit_word.execute(f"SELECT * FROM '{str(self.peer)}' ")
-        num = BD_COUNT(edit_word,0)
-        words= {
-            ((3, 3), 'create'):(f"INSERT OR IGNORE INTO '{str(self.peer)}' VALUES("
-                              f"{int(max(num)+1)},"
-                              f"{to_tuple(self.word_sep_l[1].splitlines()).lower()},"
-                              f"{to_tuple(self.word_sep_l[2].splitlines())})","Создано"),
-            ((2, 3), 'delete'):(f"DELETE FROM '{str(self.peer)}' where id IN ("
-                             f"{to_tuple(self.word_sep_l[1].split(sep=' '))})","Удалено"),
-            ((2, 4), 'update'):(f"UPDATE '{str(self.peer)}' SET val = "
-                                f"{to_tuple(self.word_sep_l[1].splitlines())} where id = "
-                                f"'{self.word_sep[3]}'","Обновлено"),
-            ((1, 3), 'list'):('',get_BD_list(edit_word, f"SELECT * FROM '{str(self.peer)}'",'-'))
+        num = BD_COUNT(edit_word, 0)
+        words = {
+            ((3, 3), 'create'): (f"INSERT OR IGNORE INTO '{str(self.peer)}' VALUES("
+                                 f"{int(max(num) + 1)},"
+                                 f"{to_tuple(self.word_sep_l[1].splitlines()).lower()},"
+                                 f"{to_tuple(self.word_sep_l[2].splitlines())})", "Создано"),
+            ((2, 3), 'delete'): (f"DELETE FROM '{str(self.peer)}' where id IN ("
+                                 f"{to_tuple(self.word_sep_l[1].split(sep=' '))})", "Удалено"),
+            ((2, 4), 'update'): (f"UPDATE '{str(self.peer)}' SET val = "
+                                 f"{to_tuple(self.word_sep_l[1].splitlines())} where id = "
+                                 f"'{self.word_sep[3]}'", "Обновлено"),
+            ((1, 3), 'list'): ('', get_BD_list(edit_word, f"SELECT * FROM '{str(self.peer)}'", '-'))
         }
         if self.len_word_list in words:
             key = words.get(self.len_word_list)
             edit_word.execute(key[0])
             BDWORDS.commit()
-            send_to_specific_peer(key[1],self.peer)
+            send_to_specific_peer(key[1], self.peer)
         BDWORDS.close()
 
     ######################################################################################################
@@ -67,13 +69,13 @@ class manager(object):
                                  f"{to_tuple(self.word_sep_l[3].splitlines())}, emoji_2 = "
                                  f"{to_tuple(self.word_sep_l[4].splitlines())} "
                                  f"where command = {to_tuple(self.word_sep_l[1].splitlines()).lower()}", "Обновлено"),
-            ((1, 3), 'list'): ('', get_BD_list(edit_roles, f"SELECT * FROM '{str(self.peer)}'",'-'))
+            ((1, 3), 'list'): ('', get_BD_list(edit_roles, f"SELECT * FROM '{str(self.peer)}'", '-'))
         }
         if self.len_word_list in roles:
             key = roles.get(self.len_word_list)
             edit_roles.execute(key[0])
             BDROLES.commit()
-            send_to_specific_peer(key[1],self.peer)
+            send_to_specific_peer(key[1], self.peer)
         BDROLES.close()
 
     ######################################################################################################
@@ -84,19 +86,21 @@ class manager(object):
         num = BD_COUNT(edit_quotes, 0)
         quotes = {
             ((2, 3), 'create'): (f"INSERT OR IGNORE INTO '{str(self.peer)}' VALUES("
-                                 f"{int(max(num) + 1)},{to_tuple(self.word_sep_l[1].splitlines()).lower()})", "Создано"),
+                                 f"{int(max(num) + 1)},{to_tuple(self.word_sep_l[1].splitlines()).lower()})",
+                                 "Создано"),
             ((2, 3), 'delete'): (f"DELETE FROM '{str(self.peer)}' where id IN ("
                                  f"{to_tuple(self.word_sep_l[1].split(sep=' '))})", "Удалено"),
             ((2, 4), 'update'): (f"UPDATE '{str(self.peer)}' SET quote = "
-                                 f"{to_tuple(self.word_sep_l[1].splitlines())} where id = {self.word_sep[3]}","Обновлено"),
-            ((1, 3), 'list'): ('', get_BD_list(edit_quotes, f"SELECT * FROM '{str(self.peer)}'",'-'))
+                                 f"{to_tuple(self.word_sep_l[1].splitlines())} where id = {self.word_sep[3]}",
+                                 "Обновлено"),
+            ((1, 3), 'list'): ('', get_BD_list(edit_quotes, f"SELECT * FROM '{str(self.peer)}'", '-'))
 
         }
         if self.len_word_list in quotes:
             key = quotes.get(self.len_word_list)
             edit_quotes.execute(key[0])
             BDQUOTES.commit()
-            send_to_specific_peer(key[1],self.peer)
+            send_to_specific_peer(key[1], self.peer)
         BDQUOTES.close()
 
     ######################################################################################################
@@ -106,20 +110,21 @@ class manager(object):
             edit = BD.cursor()
             nodes = {
                 ((1, 5), 'create'): (f"INSERT OR IGNORE INTO nodes "
-                                     f"VALUES({self.word_sep[3]}, {self.word_sep[4]})","Создано"),
+                                     f"VALUES({self.word_sep[3]}, {self.word_sep[4]})", "Создано"),
                 ((1, 4), 'delete'): (f"DELETE FROM nodes where peer_id = {self.word_sep[3]}", "Удалено"),
                 ((1, 5), 'update'): (f"UPDATE nodes SET tg_id = {self.word_sep[4]} "
-                                     f"where peer_id = {self.word_sep[3]}","Обновлено"),
-                ((1, 3), 'list'): ('', get_BD_list(edit, f"SELECT * FROM nodes",':'))
+                                     f"where peer_id = {self.word_sep[3]}", "Обновлено"),
+                ((1, 3), 'list'): ('', get_BD_list(edit, f"SELECT * FROM nodes", ':'))
             }
             arg3 = re.findall("[0-9]{1,10}", self.word_sep[3])[0] if re.findall("[0-9]{1,10}", self.word_sep[3]) else ''
-            arg4 = re.findall("-[0-9]{9,13}", self.word_sep[4])[0] if re.findall("-[0-9]{9,13}", self.word_sep[4]) else ''
-            if  self.word_sep[3] == arg3 and \
-                self.word_sep[4] == arg4 and self.len_word_list:
-                    key = nodes.get(self.len_word_list)
-                    edit.execute(key[0])
-                    BD.commit()
-                    send_to_specific_peer(key[1], self.peer)
+            arg4 = re.findall("-[0-9]{9,13}", self.word_sep[4])[0] if re.findall("-[0-9]{9,13}",
+                                                                                 self.word_sep[4]) else ''
+            if self.word_sep[3] == arg3 and \
+                    self.word_sep[4] == arg4 and self.len_word_list:
+                key = nodes.get(self.len_word_list)
+                edit.execute(key[0])
+                BD.commit()
+                send_to_specific_peer(key[1], self.peer)
             BD.close()
 
     ######################################################################################################
@@ -129,7 +134,7 @@ class manager(object):
             edit = BD.cursor()
             edit.execute(f"UPDATE peers SET count_period = {int(self.word_sep[2])} where peer_id ='{self.peer}'")
             BD.commit()
-            send_to_specific_peer(f"Значение установлено на {self.word_sep[2]}",self.peer)
+            send_to_specific_peer(f"Значение установлено на {self.word_sep[2]}", self.peer)
             BD.close()
 
     ######################################################################################################
@@ -140,19 +145,20 @@ class manager(object):
         opt = edit.fetchone()
         send_to_specific_peer(f"ID : {opt[0]} \n "
                               f"Ультимативный режим(на админки не действует): {opt[1]}\n"
-                              f"Частота вывода цитат: {opt[2]}\n",self.peer)
+                              f"Частота вывода цитат: {opt[2]}\n", self.peer)
         BD.close()
+
 
 ######################################################################################################
 class base_config(object):
-    def __init__(self,arg,from_,peer):
+    def __init__(self, arg, from_, peer):
         self.arg = arg
-        self.fact_arg = filter(lambda a: a != '',self.arg)#фактическая длина arg
-        self.len_arg = (len(list(self.fact_arg)),self.arg[2])#длина списка len_arg + знчение 2 аргумента
-        self.arg_array = str(self.arg[4]).split(sep=' ')#деление поледнего аргумента на подаргументы
+        self.fact_arg = filter(lambda a: a != '', self.arg)  # фактическая длина arg
+        self.len_arg = (len(list(self.fact_arg)), self.arg[2])  # длина списка len_arg + знчение 2 аргумента
+        self.arg_array = str(self.arg[4]).split(sep=' ')  # деление поледнего аргумента на подаргументы
         self.from_ = from_
         self.peer = peer
-        self.len_arg_array = len(self.arg_array)#длинна arg_array
+        self.len_arg_array = len(self.arg_array)  # длинна arg_array
         self.BD = sqlite3.connect('peers.db')
         self.data = read_file_json(config_file_json)
         self.string = ''
@@ -164,14 +170,15 @@ class base_config(object):
             data_keys = self.data.keys()
             type_ = types.get(self.arg[3])
             if self.arg_array is not '' and self.arg[2] in data_keys and self.arg[3] in types:
-                if  self.len_arg_array != 0 and self.len_arg_array > 1:
+                if self.len_arg_array != 0 and self.len_arg_array > 1:
                     for arg4_element in self.arg_array:
                         arg4_elements.append(type_(arg4_element))
                     self.data[self.arg[2]] = arg4_elements
                 else:
                     self.data[self.arg[2]] = type_(self.arg_array[0])
-                write_file_json(config_file_json,self.data)
-                send_to_specific_peer(f"Запрос :\n {self.arg[2] } = {type_} {self.arg_array} \n выполнен успешно.", self.peer)
+                write_file_json(config_file_json, self.data)
+                send_to_specific_peer(f"Запрос :\n {self.arg[2]} = {type_} {self.arg_array} \n выполнен успешно.",
+                                      self.peer)
             else:
                 send_to_specific_peer(f"Данные не корректны.", self.peer)
         else:
@@ -181,8 +188,8 @@ class base_config(object):
     def show(self):
         if self.from_ in ADMIN_JSON_CONFIG:
             for e in self.data:
-                self.string+=f"{e} : {self.data.get(e)}\n"
-            send_to_specific_peer(self.string,self.peer)
+                self.string += f"{e} : {self.data.get(e)}\n"
+            send_to_specific_peer(self.string, self.peer)
 
     ######################################################################################################
     def info_param(self):
@@ -190,8 +197,8 @@ class base_config(object):
             edit = self.BD.cursor()
             edit.execute(f"SELECT * FROM params_info")
             for e in edit.fetchall():
-                self.string+=f"{e[0]} - {e[1]}\n"
-            send_to_specific_peer(self.string,self.peer)
+                self.string += f"{e[0]} - {e[1]}\n"
+            send_to_specific_peer(self.string, self.peer)
             self.BD.close()
 
     ######################################################################################################
@@ -199,12 +206,14 @@ class base_config(object):
         if self.from_ in ADMIN_JSON_CONFIG:
             edit = self.BD.cursor()
             edits = {
-                (5,'create'):(f"INSERT OR IGNORE INTO params_info VALUES('{self.arg[3]}',"
-                          f" '{self.arg[4]}')","Описание параметра создано"),
-                (5,'update'):(f"UPDATE params_info SET info = '{self.arg[4]}' "
-                          f"WHERE param = '{self.arg[3]}'","Описание параметра обновлено")
+                (5, 'create'): (f"INSERT OR IGNORE INTO params_info VALUES('{self.arg[3]}',"
+                                f" '{self.arg[4]}')", "Описание параметра создано"),
+                (5, 'update'): (f"UPDATE params_info SET info = '{self.arg[4]}' "
+                                f"WHERE param = '{self.arg[3]}'", "Описание параметра обновлено"),
+                (4, 'delete'): (f"DELETE FROM params_info where param = '{self.arg[3]}'", "Описание параметра удалено")
             }
             if self.len_arg in edits:
                 edit.execute(edits.get(self.len_arg)[0])
                 self.BD.commit()
-                send_to_specific_peer(edits.get(self.len_arg)[1],self.peer)
+                send_to_specific_peer(edits.get(self.len_arg)[1], self.peer)
+######################################################################################################################
