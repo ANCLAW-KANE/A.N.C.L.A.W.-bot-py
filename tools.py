@@ -2,7 +2,7 @@ import json,random,string,logging
 from PIL import Image
 from CONFIG import config_file_json
 ################################ TOOLS ##############################################
-def to_tuple(obj):
+def to_tuple(obj):#li
     return str(list(obj)).replace('[','').replace(']','')
 ############################################################################
 def write_file(name,getfile):

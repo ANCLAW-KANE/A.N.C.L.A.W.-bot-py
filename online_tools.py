@@ -1,4 +1,4 @@
-import os, re , random ,requests,time
+import os, re , random ,requests,time,sqlite3
 from datetime import datetime
 from sessions import vk,vk_user,bot,size_values,upload,platforms
 from CONFIG import IdGroupVK
@@ -99,6 +99,39 @@ def get_online(obj):
 def get_conversation_message_ids(peer,id_,ext,fields):
     q = vk.messages.getByConversationMessageId(peer_id = peer,conversation_message_ids=id_,fields=fields,extended=ext)
     return q
+
+######################################################################################################################
+
+class Invertor(object):#класс для переключения 0 1 значений в БД
+    def __init__(self,sender,from_,query,m1,m2,peer,update,index,type_,arg):
+        self.query = query
+        self.type_ = type_
+        self.sender = sender
+        self.from_ = from_
+        self.peer = peer
+        self.m1 = m1
+        self.m2 = m2
+        self.update = update
+        self.index = index
+        self.arg = arg
+
+    def key(self):
+        if self.sender in self.from_:
+            BD = sqlite3.connect('peers.db')
+            edit = BD.cursor()
+            edit.execute(self.query)
+            str_E_G = list(edit.fetchone())
+            if str_E_G[self.index] == self.type_('0'):
+                str_E_G = self.type_('1')
+                send_to_specific_peer(self.m1, self.peer)
+            elif str_E_G[self.index] == self.type_('1'):
+                str_E_G = self.type_('0')
+                send_to_specific_peer(self.m2, self.peer)
+            edit.execute(self.update, (self.type_(str_E_G), self.arg))
+            print(self.update, (self.type_(str_E_G), int(self.arg)))
+            BD.commit()
+            BD.close()
+
 ######################################################################################################################
 ################################################ TELEGRAM TOOLS ######################################################
 ######################################################################################################################

@@ -1,7 +1,7 @@
 import sqlite3, re
 
 from tools import BD_COUNT, to_tuple, get_BD_list, read_file_json, write_file_json, json_gen
-from online_tools import send_to_specific_peer
+from online_tools import send_to_specific_peer,Invertor
 from CONFIG import config_file_json, ADMIN_JSON_CONFIG
 
 types = {
@@ -10,8 +10,6 @@ types = {
     'bool': bool,
     'arr-int': lambda a: [int(a)]
 }
-
-
 ######################################################################################################
 class manager(object):
     def __init__(self, word_sep_l, word_sep, from_, peer):
@@ -25,6 +23,8 @@ class manager(object):
         self.len_fact_l = len(list(self.fact_l))
         self.len_word_list = ((self.len_fact_l, self.len_fact), word_sep[2])  # фактическая длинна fact + fact_l
         self.EVIL_GODS = json_gen().return_config_file_json()['EVIL_GODS']
+        self.m = f'| ____ вк чат ____ | ____телеграм чат____ ||| Разрешения адресации\n'\
+                 f'| ============= |================== ||| =========|==========\n'
 
     ######################################################################################################
     def word(self):
@@ -104,27 +104,57 @@ class manager(object):
         BDQUOTES.close()
 
     ######################################################################################################
+    def node_list(self):
+        list_words = []
+        BD = sqlite3.connect('peers.db')
+        edit = BD.cursor()
+        edit.execute('SELECT * FROM nodes')
+        for z in edit.fetchall():
+            list_words.append(list(z))
+        for o in range(len(list_words)):
+            for q in range(len(list_words[o])):
+                if list_words[o][q] == 1: list_words[o][q] = '✅'
+                if list_words[o][q] == 0: list_words[o][q] = '⛔'
+            self.m += f"| VK: {list_words[o][0]} | TG: {list_words[o][1]} ||| VK>TG: " \
+                      f"{list_words[o][2]}| TG>VK:{list_words[o][3]}\n"
+        return self.m
+
     def edit_node(self):
         if self.from_ in self.EVIL_GODS:
             BD = sqlite3.connect('peers.db')
             edit = BD.cursor()
             nodes = {
                 ((1, 5), 'create'): (f"INSERT OR IGNORE INTO nodes "
-                                     f"VALUES({self.word_sep[3]}, {self.word_sep[4]})", "Создано"),
+                                     f"VALUES({self.word_sep[3]}, {self.word_sep[4]},{1} , {1})", "Создано"),
                 ((1, 4), 'delete'): (f"DELETE FROM nodes where peer_id = {self.word_sep[3]}", "Удалено"),
                 ((1, 5), 'update'): (f"UPDATE nodes SET tg_id = {self.word_sep[4]} "
                                      f"where peer_id = {self.word_sep[3]}", "Обновлено"),
-                ((1, 3), 'list'): ('', get_BD_list(edit, f"SELECT * FROM nodes", ':'))
+                ((1, 3), 'list'): ('', self.node_list()),
+                }
+            nodes_perm = {
+                ((1, 3), 'allow-vk'):
+                    Invertor(self.from_,self.EVIL_GODS,f"SELECT * FROM nodes where peer_id = {self.peer}",'Разрешено',
+                    'Запрещено',self.peer,f"UPDATE nodes SET vk_tg_allow = ? where peer_id = ?",2,int,self.peer).key,
+                ((1, 3), 'allow-tg'):
+                    Invertor(self.from_, self.EVIL_GODS, f"SELECT * FROM nodes where peer_id = {self.peer}", 'Разрешено',
+                    'Запрещено', self.peer,f"UPDATE nodes SET tg_vk_allow = ? where peer_id = ?", 3, int, self.peer).key,
+                ((1, 4), 'allow-vk'):
+                    Invertor(self.from_, self.EVIL_GODS, f"SELECT * FROM nodes where peer_id = {self.word_sep[3]}", 'Разрешено',
+                    'Запрещено', self.peer, f"UPDATE nodes SET vk_tg_allow = ? where peer_id = ?", 2, int, self.word_sep[3]).key,
+                ((1, 4), 'allow-tg'):
+                    Invertor(self.from_, self.EVIL_GODS, f"SELECT * FROM nodes  where peer_id = {self.word_sep[3]}", 'Разрешено',
+                    'Запрещено', self.peer, f"UPDATE nodes SET tg_vk_allow = ? where peer_id = ?", 3, int, self.word_sep[3]).key,
             }
             arg3 = re.findall("[0-9]{1,10}", self.word_sep[3])[0] if re.findall("[0-9]{1,10}", self.word_sep[3]) else ''
-            arg4 = re.findall("-[0-9]{9,13}", self.word_sep[4])[0] if re.findall("-[0-9]{9,13}",
-                                                                                 self.word_sep[4]) else ''
-            if self.word_sep[3] == arg3 and \
-                    self.word_sep[4] == arg4 and self.len_word_list:
+            arg4 = re.findall("-[0-9]{9,13}", self.word_sep[4])[0] if re.findall("-[0-9]{9,13}", self.word_sep[4]) else ''
+            if self.word_sep[3] == arg3 and self.word_sep[4] == arg4 and self.len_word_list in nodes:
                 key = nodes.get(self.len_word_list)
                 edit.execute(key[0])
                 BD.commit()
                 send_to_specific_peer(key[1], self.peer)
+            elif self.len_word_list in nodes_perm:
+                key = nodes_perm.get(self.len_word_list)
+                if key is not None: key()
             BD.close()
 
     ######################################################################################################
@@ -142,10 +172,17 @@ class manager(object):
         BD = sqlite3.connect('peers.db')
         edit = BD.cursor()
         edit.execute(f"SELECT * FROM peers WHERE peer_id = {self.peer}")
-        opt = edit.fetchone()
-        send_to_specific_peer(f"ID : {opt[0]} \n "
-                              f"Ультимативный режим(на админки не действует): {opt[1]}\n"
-                              f"Частота вывода цитат: {opt[2]}\n", self.peer)
+        opt = list(edit.fetchone())
+        for o in range(len(opt)):
+            if opt[o] == '1' : opt[o] = '✅'
+            if opt[o] == '0' or 0 : opt[o] = '⛔'
+        send_to_specific_peer(f"🆔 : {opt[0]} \n "
+                              f"☢ ️Ультимативный режим(на админки не действует): {opt[1]}\n"
+                              f"🎚 Частота вывода цитат: {opt[2]}\n"
+                              f"☢️ Ультимативный режим: {opt[3]}\n"
+                              f"🍆 Режим рандомного изнасилования: {opt[4]}\n"
+                              f"📡 R.E.D.-модуль: {opt[5]}\n"
+                              , self.peer)
         BD.close()
 
 

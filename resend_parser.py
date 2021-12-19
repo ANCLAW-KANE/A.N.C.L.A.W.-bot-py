@@ -42,7 +42,7 @@ class parse_resend(object):
         self.from_ = from_
         self.user = str(getUserName(self.from_)) if self.from_ is not None else ''
         self.TitleChat = GET_CHAT_TITLE(self.peer) if self.peer > self.const_peer else ''
-        self.TEXT = obj.text
+        self.TEXT = self.obj['text']
         self.tb = ''
         self.photos = []
         self.m = []
@@ -97,7 +97,7 @@ class parse_resend(object):
 
     #############################################################################################################
     def sender(self):
-        if self.obj.text !='' and self.attachm == []:
+        if self.TEXT !='' and self.attachm == []:
             self.text_box()
             SendTG('txt', self.node, self.tb, self.tb, None).sender()
         if self.attachm and not self.attachm_wall:
