@@ -159,9 +159,15 @@ class SendTG(object):
                 logger(z)
     ################################################################################################
     def send_photo(self):
-        for z in self.att:
-            bot.send_photo(chat_id=self.adress, photo=z,caption=self.text_sep[0])
-            logger(f"{self.log}")
+        if self.text < self.n:
+            for z in self.att:
+                bot.send_photo(chat_id=self.adress, photo=z,caption=self.text_sep[0])
+                logger(f"{self.log}")
+        else:
+            self.send_message()
+            for z in self.att:
+                bot.send_photo(chat_id=self.adress, photo=z)
+                logger(f"{self.log}")
     ################################################################################################
     def send_audio(self):
         try:
