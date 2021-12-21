@@ -159,13 +159,15 @@ class manager(object):
 
     ######################################################################################################
     def count(self):
-        if self.len_fact == 3 and self.word_sep[2] == re.findall("[0-9]{1,3}", self.word_sep[2])[0]:
-            BD = sqlite3.connect('peers.db')
-            edit = BD.cursor()
-            edit.execute(f"UPDATE peers SET count_period = {int(self.word_sep[2])} where peer_id ='{self.peer}'")
-            BD.commit()
-            send_to_specific_peer(f"Значение установлено на {self.word_sep[2]}", self.peer)
-            BD.close()
+        if self.len_fact == 3 :
+            if self.word_sep[2] == re.search("100|[0-9]{1,2}", self.word_sep[2])[0]:
+                BD = sqlite3.connect('peers.db')
+                edit = BD.cursor()
+                edit.execute(f"UPDATE peers SET count_period = {int(self.word_sep[2])} where peer_id ='{self.peer}'")
+                BD.commit()
+                send_to_specific_peer(f"Значение установлено на {self.word_sep[2]}", self.peer)
+                BD.close()
+            else: send_to_specific_peer(f"Значение должно быть 0-100 (%)", self.peer)
 
     ######################################################################################################
     def show_settings(self):

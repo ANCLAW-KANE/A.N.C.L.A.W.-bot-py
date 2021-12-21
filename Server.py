@@ -9,18 +9,15 @@ from CONFIG import config_file_json
 
 ################################### вк бот ################################################
 def vk_bot_respondent():
-    i = 0
-    global respondent, who
-    if not os.path.isfile(config_file_json):
-        write_file_json(config_file_json, json_gen().return_json())
+    if not os.path.isfile(config_file_json): write_file_json(config_file_json, json_gen().return_json())
     BD = sqlite3.connect('peers.db')
     edit = BD.cursor()
     edit.execute(f"""CREATE TABLE IF NOT EXISTS peers( peer_id INT PRIMARY KEY,e_g_mute TEXT,count_period INT,
-                    e_g_head TEXT,e_g_ex TEXT,resend INT);""")
-    edit.execute("""CREATE TABLE IF NOT EXISTS nodes( peer_id INT PRIMARY KEY, tg_id INT, vk_tg_allow INT, tg_vk_allow INT); """)
+                     e_g_head TEXT,e_g_ex TEXT,resend INT);""")
+    edit.execute("""CREATE TABLE IF NOT EXISTS nodes( peer_id INT PRIMARY KEY, tg_id INT, vk_tg_allow INT, 
+                    tg_vk_allow INT); """)
     edit.execute("""CREATE TABLE IF NOT EXISTS params_info( param TEXT PRIMARY KEY, info TEXT); """)
-    for e in read_file_json(config_file_json):
-        edit.execute(f"INSERT OR IGNORE INTO params_info VALUES('{e}','')")
+    for e in read_file_json(config_file_json): edit.execute(f"INSERT OR IGNORE INTO params_info VALUES('{e}','')")
     BD.commit()
 
     BDWORDS = sqlite3.connect('peers_words.db')
@@ -38,70 +35,66 @@ def vk_bot_respondent():
     for respondent in longpoll.listen():
         try:
             if respondent.type == VkBotEventType.MESSAGE_NEW:
-                i = i + 1
+                r = random.randint(0,100)
+                Dictwords = []
+                TextSplitLowerDict = set('')
                 ######################################### VK Event ########################################
                 MESSAGE = respondent.object.message
                 TEXT = MESSAGE['text']
                 peerID = MESSAGE['peer_id']
                 from_id = MESSAGE['from_id']
                 lines = str(TEXT).lower().splitlines()
-                TextSplitLowerDict = set('')
                 if lines: TextSplitLowerDict = set(lines[0].split())
-                Dictwords = []
                 ######################################### DB ########################################
                 # Стандартные настройки чатов
                 data = (peerID, '0', 0 ,'0','0',1)
                 ####index: 0     1   2   3   4  5
                 edit.execute("INSERT OR IGNORE INTO peers VALUES(?,?,?,?,?,?)", data)
                 BD.commit()
-
-                # Частота рандомных ответов
+                ################# Частота рандомных ответов
                 edit.execute(f"SELECT * FROM peers WHERE peer_id = {peerID}")
                 count_period = int(edit.fetchone()[2])
 
-                # Шаблонные ответы
-                edit_word.execute(
-                    f"CREATE TABLE IF NOT EXISTS '{peerID}' ( id INT, key TEXT PRIMARY KEY, val TEXT);")
+                ################# Шаблонные ответы
+                edit_word.execute(f"CREATE TABLE IF NOT EXISTS '{peerID}' ( id INT, key TEXT PRIMARY KEY, val TEXT);")
                 BDWORDS.commit()
                 edit_word.execute(f"SELECT key,val FROM '{peerID}' ")
                 words = edit_word.fetchall()
-                for word in words:
-                    Dictwords.append(word[0])
-
-                # ролевые команды
-                edit_roles.execute(
-                    f"CREATE TABLE IF NOT EXISTS '{peerID}' ( id INT PRIMARY KEY, command TEXT ,emoji_1 TEXT, txt TEXT, emoji_2 TEXT);")
-
-                # Рандомные высказывания бота
+                for word in words: Dictwords.append(word[0])
+                ################# ролевые команды
+                edit_roles.execute(f"CREATE TABLE IF NOT EXISTS '{peerID}' ( id INT PRIMARY KEY, command TEXT ,"
+                                   f"emoji_1 TEXT, txt TEXT, emoji_2 TEXT);")
+                ################# Рандомные высказывания бота
                 edit_quotes.execute(f"CREATE TABLE IF NOT EXISTS '{peerID}' ( id INT PRIMARY KEY, quote TEXT);")
                 BDQUOTES.commit()
                 edit_quotes.execute(f"SELECT quote FROM '{peerID}'")
                 quotes = edit_quotes.fetchall()
-                ################################ Словари для запрос-ответ #################################
+    ######################################## Блок классов команд ######################################################
                 prefix = {
                     '*': privileges(TEXT, from_id, peerID, MESSAGE).check(),
                     '!': WHO(TEXT, from_id, peerID).WHO_GET(),
                     '/': COMMAND(TEXT, from_id, peerID, MESSAGE).check()
                 }
-                ############################### Обработка ######################################
+        ######################################### Обработка ######################################
                 if TEXT is not '':
                     privileges(TEXT, from_id, peerID, MESSAGE).EVIL_GOD()
                     if str(TEXT)[0] != '/' or '*' or '!':
                         dw = dict(words)
+                        ####################################################################
                         if set(lines) & set(Dictwords):
                             for element in lines:
                                 key = dw.get(element)
                                 if key is not None: send_to_specific_peer(key, peerID)
+                        ####################################################################
                         elif TextSplitLowerDict & set(Dictwords):
                             for element in TextSplitLowerDict:
                                 key = dw.get(element)
                                 if key is not None: send_to_specific_peer(key, peerID)
+                    #####################################################################################
                     if TEXT[0] in prefix:
                         key1 = prefix.get(TEXT[0])
                         if key1 is not None: key1()
-
-                if count_period != 0 and TEXT and \
-                        i % count_period == 0 and quotes != []:  send_to_specific_peer(random.choice(quotes), peerID)
+                if r < count_period and quotes:  send_to_specific_peer(random.choice(quotes), peerID)
             ###########################################################################################
         except Exception as e:
             send_to_specific_peer(f"{e}", respondent.object.message['peer_id'])
