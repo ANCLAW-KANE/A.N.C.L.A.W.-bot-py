@@ -1,7 +1,9 @@
 from requests import get
-from online_tools import get_max_photo,getUserName,get_conversation_message_ids,GET_CHAT_TITLE,SendTG
-
-line_a = "\n_____________________________________________________\n\n"
+from urllib import request
+from online_tools import get_max_photo,getUserName,get_conversation_message_ids,GET_CHAT_TITLE
+from telebot.types import InputMediaPhoto,InputMediaAudio
+from resend_function import SendTG
+line_a = "\n___________________________\n"
 ###########################################################################################
 media = {
     'doc': lambda at: ('txt', f"{str(at['doc']['url']).replace('no_preview=1', '')}" + line_a,
@@ -10,8 +12,8 @@ media = {
                          f"https://vk.com/video{at['video']['owner_id']}_{at['video']['id']}" + line_a, None),
     "link": lambda at: ('txt', f"{at['link']['url']}" + line_a, f"{at['link']['url']}" + line_a, None),
     'audio_message': lambda at: ('audio', f"{at['audio_message']['link_mp3']}", "" if at == True else "",
-                                 get(at['audio_message']['link_mp3']).content),
-    'photo': lambda at: ('photo', f"{get_max_photo(at)}" + line_a, '', get(get_max_photo(at)).content),
+                                 at['audio_message']['link_mp3']),
+    'photo': lambda at: ('photo', f"{get_max_photo(at)}" + line_a, '', get_max_photo(at)),
     'audio': lambda at: ('audio', f" https://vk.com/audio{at['audio']['owner_id']}_{at['audio']['id']}",
                          f"https://vk.com/audio{at['audio']['owner_id']}_{at['audio']['id']}"
                          f"\n{at['audio']['artist']} - {at['audio']['title']} {at['audio'].get('subtitle', '')}\nДлительность: "
@@ -45,12 +47,12 @@ class parse_resend(object):
         self.TEXT = self.obj['text']
         self.tb = ''
         self.photos = []
+        self.audios = []
         self.m = []
         self.key = None
         self.attachm = self.obj.get('attachments',0)
         self.attachm_wall = self.attachm[0].get('wall',0) if self.attachm != [] else None
         self.action = self.obj.get('action',0)
-
     ###########################################################################################
     def text_box(self):
         self.tb += line_a
@@ -63,10 +65,20 @@ class parse_resend(object):
     ######################################## Вложения ################################################
     def attachment_box(self):
         self.text_box()
+        message = self.tb
         for att in self.attachm:
-            if att['type'] in media:
+            if att['type'] in media and att['type'] not in ['photo','audio','audio_message']:
                 self.m += [media.get(att['type'])(att)]
-
+            elif att['type'] == 'photo':
+                self.photos.append(InputMediaPhoto(media.get(att['type'])(att)[3], caption=self.tb))
+            elif att['type'] == 'audio' or 'audio_message':
+                z = media.get(att['type'])(att)
+                try:
+                    request.urlopen(z[3])
+                    message += z[2]
+                    self.audios.append(InputMediaAudio(z[3],caption= message))
+                    message = ""
+                except: self.m += [media.get(att['type'])(att)]
     ####################################### Стена #############################################
     def wall_parse(self):
         if self.attachm_wall:
@@ -75,39 +87,37 @@ class parse_resend(object):
         ######################################## Имя источника ################################################
             ag = self.attachm_wall['from'].get('name', 0)
             attachm = self.attachm_wall.get('attachments', 0)
-            if ag == 0:
-                self.tb += f"\n Пользовтель: {self.attachm_wall['from']['first_name']} {self.attachm_wall['from']['last_name']}"
-            else:
-                self.tb += f"\n группа: {self.attachm_wall['from']['name']}"
+            if ag == 0: self.tb += f"\n Пользовтель: {self.attachm_wall['from']['first_name']}" \
+                                   f" {self.attachm_wall['from']['last_name']}"
+            else: self.tb += f"\n группа: {self.attachm_wall['from']['name']}"
         ###########################################################################################
-            if self.attachm_wall['text'] != '':
-                self.tb += f"\n{line_a}\n{self.attachm_wall['text']}{line_a}"
+            if self.attachm_wall['text'] != '': self.tb += f"\n{line_a}\n{self.attachm_wall['text']}{line_a}"
         ###########################################################################################
             if attachm != 0:
                 for wall_att in attachm:
                     self.m = media.get(wall_att['type'])(wall_att)
                     if wall_att['type'] == 'doc' or 'video' or 'link' or 'audio': self.tb += self.m[2]
-                    if wall_att['type'] == 'photo': self.photos.append(self.m[3])
-
+                    if wall_att['type'] == 'photo': self.photos.append(InputMediaPhoto(self.m[3],caption=self.tb))
     ################################# Обработка событий чата ###################################
     def action_box(self):
-        if self.obj.action is not None:
-            if self.obj.action['type'] in tab:
-                self.key = f"Чат: {self.obj.peer_id}\n {tab.get(self.obj.action['type'])(self.obj)}"
-
+        if self.obj['action'] is not None:
+            if self.obj['action']['type'] in tab:
+                self.key = f"Чат: {self.obj['peer_id']}\n {tab.get(self.obj['action']['type'])(self.obj)}"
     #############################################################################################################
     def sender(self):
         if self.TEXT !='' and self.attachm == []:
             self.text_box()
-            SendTG('txt', self.node, self.tb, self.tb, None).sender()
+            SendTG('txt', self.node, self.tb, self.tb, []).sender()
         if self.attachm and not self.attachm_wall:
             self.attachment_box()
             for z in self.m: SendTG(z[0], self.node, f"{self.tb}\n {z[1]}",f"{self.tb}\n {z[2]}", [z[3]]).sender()
+            if self.photos: SendTG('photo', self.node, f"{self.tb}\n ",f"{self.tb}\n ", self.photos).sender()
+            if self.audios: SendTG('audio', self.node, f"{self.tb}\n ", f"{self.tb}\n ", self.audios).sender()
         if self.attachm_wall:
             self.wall_parse()
             if self.photos: SendTG('photo',self.node,f"{self.tb}\n {self.m[1]}",f"{self.tb}\n {self.m[2]}",self.photos).sender()
-            if not self.photos: SendTG('txt', self.node, self.tb, self.tb, None).sender()
+            if not self.photos: SendTG('txt', self.node, self.tb, self.tb, []).sender()
         if self.action != 0:
             if self.action['type'] in tab:
                 self.action_box()
-                SendTG('txt', self.node, self.key, self.key, None).sender()
+                SendTG('txt', self.node, self.key, self.key, []).sender()
