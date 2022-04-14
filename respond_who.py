@@ -1,4 +1,4 @@
-import random,sqlite3,re
+import random,sqlite3,re,json
 from  vk_api.keyboard import VkKeyboardColor
 from tools import BD_COUNT,get_one_col_list
 from online_tools import get_tag,getUserName,send_to_specific_peer,RandomMember,create_keyboard
@@ -77,9 +77,9 @@ class WHO(object):
                     BD.commit()
                 else: info = "Брак не зарегистрирован или уже оформлен"
             else: info = "Куда ты жмешь -_-"
-        else: info = "Ты не подавал брак с кем-либо"
-        if info: send_to_specific_peer(info,self.peer)
-        # vk_Srv.notifications.sendMessage(user_ids=[self.fromid],user_id=self.fromid,message="тест",group_id=IdGroupVK)
+        else: info = "Ты не подавал брак"
+        if info: vk.messages.sendMessageEventAnswer( event_id=self.obj.event_id, user_id=self.obj.user_id,
+                      peer_id=self.obj.peer_id, event_data=json.dumps({"type": "show_snackbar", "text": info}))
         BD.close()
 
     ################################################################################################
@@ -93,7 +93,7 @@ class WHO(object):
         elif self.id is not None:
             froms = len(get_one_col_list('peers.db', f"SELECT man1 FROM marry where peer_id = "
                                                      f"{self.peer} and man1 = {self.fromid}"))
-            params = edit.execute(f"SELECT allow,await,id FROM marry where peer_id = "
+            params = edit.execute(f"SELECT allow,await,id,peer_id FROM marry where peer_id = "
                          f"{self.peer} and (man1 = {self.fromid} and man2 = {self.id})"
                          f"or (man1 = {self.id} and man2 = {self.fromid})").fetchone()
             marry_polygam = edit.execute(f"SELECT poligam_marry FROM peers where peer_id = {self.peer}").fetchone()[0]
@@ -106,17 +106,18 @@ class WHO(object):
                     f" or (man1 = {self.id} and man2 = {self.fromid})",f"Вы отозвали брак с {self.name}!", None]
             ##############################
             else:
-                #print(marry_polygam, params)
-                if params is None:
-                    if marry_polygam == 1 or (marry_polygam == 0 and froms <= 1):
+                #print(marry_polygam, params , froms)
+                if (params is None) or (params[3] != self.peer):
+                    if marry_polygam == 1 or (marry_polygam == 0 and froms < 1):
                         m =[f'INSERT OR IGNORE INTO marry VALUES({max(num) + 1},{self.peer},{self.fromid},'
                             f'{self.id},"{getUserName(self.fromid)}","{getUserName(self.id)}",{0},{1})',
                         f"{self.name} ! Пользователь {self.sender} сделал вам предложение руки и сердца.",key]
-                    else:   m =['',"Администратор запретил множественные браки в этом чате!", None]
+                    else: m =['',"Администратор запретил множественные браки в этом чате!", None]
                 ##############################
                 else:
                     if params[1] == 1: m = ['',f"Брак уже подан и находится в ожидании!\n{self.name} примите или отклоните",key]
                     if params[0] == 1: m = ['',f"Вы уже в браке с этим человеком!\n",None]
+
         if m is not None:
             edit.execute(m[0])
             send_to_specific_peer(m[1],self.peer,m[2])
@@ -131,9 +132,9 @@ class WHO(object):
         string = None
         if len(self.string_) >=2:
             strings = {
-                "ожидание":["Ждут согласия 👫\n", "💝",f"SELECT man1name ,man2name from marry where allow = 0"],
+                "ожидание":["Ждут согласия 👫\n", "💝",f"SELECT man1name ,man2name from marry where allow = 0 and peer_id = {self.peer}" ],
                 "я":["Ваши браки  👫\n", "💝",f"SELECT man1name ,man2name from marry "
-                                        f"where (man1 = {self.fromid} or man2 = {self.fromid}) and allow = 1"]
+                                        f"where (man1 = {self.fromid} or man2 = {self.fromid}) and allow = 1 and peer_id = {self.peer}"]
             }
             if self.string_[1] in strings:
                 string = strings.get(self.string_[1])
@@ -151,7 +152,7 @@ class WHO(object):
                         f'UPDATE marry SET man2name = "{user}" where man2 = {z}')
                     BD.commit()
                 self.msgstring = "Имена обновлены"
-        else: string =  [" Помолвлены 👩‍❤‍👨\n","💞",f"SELECT man1name ,man2name from marry where allow = 1"]
+        else: string =  [" Помолвлены 👩‍❤‍👨\n","💞",f"SELECT man1name ,man2name from marry where allow = 1 and peer_id = {self.peer}"]
         if string is not None:
             self.msgstring +=f"{string[0]}"
             data = edit.execute(string[2]).fetchall()
