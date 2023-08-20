@@ -142,7 +142,6 @@ async def bot(msg: Message):
         }
         ######################################### Обработка ######################################
         if TEXT != '':
-            await msg.answer(message="хуемем")
             # if FSM(from_id, peerID).check_state() != None: send_to_specific_peer(c, peerID)
             await privileges(txt=TEXT, sender=from_id, peer=peerID, obj=msg).EVIL_GOD()
             if msg.payload:
