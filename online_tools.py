@@ -57,8 +57,8 @@ async def GetMembers(peer):
         owner = mbs.is_owner
         membList.append(member) if member > 0 else memBots.append(member)
         membListAdmin.append(member) if (admin or owner) else membListNotAdmin.append(member)
-    # print([membList, membListNotAdmin, membListAdmin, memBots])
-    return [membList, membListNotAdmin, membListAdmin, memBots]
+    # print({"all_members":membList, "members":membListNotAdmin, "admins":membListAdmin, "bots":memBots})
+    return {"all_members":membList, "members":membListNotAdmin, "admins":membListAdmin, "bots":memBots}
 
 
 ######################################################################################################################
@@ -88,7 +88,7 @@ def GET_CHAT_TITLE(obj):
 ######################################################################################################################
 async def RandomMember(peer):
     ListUserID = await GetMembers(peer)
-    userID = random.choice(ListUserID[0])
+    userID = random.choice(ListUserID['all_members'])
     username = await api_group.users.get(user_ids=userID)
     user = str(username[0].first_name + " " + username[0].last_name)
     return str('@id' + str(userID) + '(' + user + ')')
@@ -118,7 +118,7 @@ def get_max_photo(obj):
 ######################################################################################################################
 def get_online(obj):
     fields = ''
-    info = vk.users.get(user_ids=GetMembers(obj)[0], fields=['first_name', 'last_name', 'online', 'last_seen'])
+    info = vk.users.get(user_ids=GetMembers(obj)['all_members'], fields=['first_name', 'last_name', 'online', 'last_seen'])
     for field in info:
         online = '✅ONLINE' if field['online'] == 1 else '❌OFFLINE'
         get_seen = field.get('last_seen', None)

@@ -140,7 +140,7 @@ class Respondent_command(object):
     #######################################/кик ######################################
     async def manager_kick(self):
         self.Members = (await GetMembers(self.PEER))
-        if self._FROM in self.Members[2] or self._FROM in self.EVIL_GODS:
+        if self._FROM in self.Members['admins'] or self._FROM in self.EVIL_GODS:
             try:
                 if self.len_sep == 2:
                     t = (await get_tag(self.sep[1]))
@@ -178,7 +178,7 @@ class Respondent_command(object):
     ####################################### E X T E R M I N A T U S ######################################
     async def KILL_ALL_MEMBERS(self):
         self.Members = (await GetMembers(self.PEER))
-        for member in self.Members[1]: await kick(chat_id=self.PEER - 2000000000, member_id=member)
+        for member in self.Members['members']: await kick(chat_id=self.PEER - 2000000000, member_id=member)
 
     async def catalog(self):
         data_msg.msg = global_catalog_command

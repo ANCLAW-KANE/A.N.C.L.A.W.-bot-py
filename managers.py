@@ -40,19 +40,19 @@ class manager(object):
                                  f"{t_m[0].lower()},"
                                  f" {t_m[1]})",
                                  "Создано",
-                                 1, self.mem[0]),
+                                 1, self.mem['all_members']),
             ((2, 3), 'delete'): (f"DELETE FROM '{str(self.peer)}' where id IN ("
                                  f"{to_tuple(self.word_sep_l[1].split(sep=' '))})",
                                  "Удалено",
-                                 1, self.mem[0]),
+                                 1, self.mem['all_members']),
             ((1, 3), 'kill'): (f"DELETE FROM '{str(self.peer)}'",
                                "Данные уничтожены",
-                               1, self.mem[2]),
+                               1, self.mem['admins']),
             ((2, 4), 'update'): (f"UPDATE '{str(self.peer)}' SET"
                                  f" val = {t_m[0]} "
                                  f"where id = '{self.word_sep[3]}'",
                                  "Обновлено",
-                                 1, self.mem[0])
+                                 1, self.mem['all_members'])
         }
         if self.len_word_list in words:
             key = words.get(self.len_word_list)
@@ -75,18 +75,18 @@ class manager(object):
                                  f"{t_m[1]},"
                                  f"{t_m[2]},"
                                  f"{t_m[3]})",
-                                 "Создано", 1, self.mem[0]),
+                                 "Создано", 1, self.mem['all_members']),
             ((2, 3), 'delete'): (f"DELETE FROM '{str(self.peer)}' where id IN ("
                                  f"{to_tuple(self.word_sep_l[1].split(sep=' '))})",
-                                 "Удалено", 1, self.mem[0]),
+                                 "Удалено", 1, self.mem['all_members']),
             ((1, 3), 'kill'): (f"DELETE FROM '{str(self.peer)}'",
-                               "Данные уничтожены", 1, self.mem[2]),
+                               "Данные уничтожены", 1, self.mem['admins']),
             ((5, 3), 'update'): (f"UPDATE '{str(self.peer)}' SET "
                                  f"emoji_1 = {t_m[1]}, "
                                  f"txt = {t_m[2]}, "
                                  f"emoji_2 = {t_m[3]}"
                                  f" where command = {t_m[0].lower()}",
-                                 "Обновлено", 1, self.mem[0]),
+                                 "Обновлено", 1, self.mem['all_members']),
         }
         if self.len_word_list in roles:
             key = roles.get(self.len_word_list)
@@ -103,16 +103,16 @@ class manager(object):
             ((2, 3), 'create'): (f"INSERT OR IGNORE INTO '{str(self.peer)}' VALUES("
                                  f"{int(max(num) + 1)},"
                                  f"{to_tuple(self.word_sep_l[1].splitlines()).lower()})",
-                                 "Создано", 1, self.mem[0]),
+                                 "Создано", 1, self.mem['all_members']),
             ((2, 3), 'delete'): (f"DELETE FROM '{str(self.peer)}' where id IN ("
                                  f"{to_tuple(self.word_sep_l[1].split(sep=' '))})",
-                                 "Удалено", 1, self.mem[0]),
+                                 "Удалено", 1, self.mem['all_members']),
             ((1, 3), 'kill'): (f"DELETE FROM '{str(self.peer)}'",
-                               "Данные уничтожены", 1, self.mem[2]),
+                               "Данные уничтожены", 1, self.mem['admins']),
             ((2, 4), 'update'): (f"UPDATE '{str(self.peer)}' SET "
                                  f"quote = {to_tuple(self.word_sep_l[1].splitlines())}"
                                  f" where id = {self.word_sep[3]}",
-                                 "Обновлено", 1, self.mem[0]),
+                                 "Обновлено", 1, self.mem['all_members']),
         }
         if self.len_word_list in quotes:
             key = quotes.get(self.len_word_list)
