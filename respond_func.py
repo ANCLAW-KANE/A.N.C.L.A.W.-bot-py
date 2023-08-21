@@ -144,7 +144,7 @@ class Respondent_command(object):
             try:
                 if self.len_sep == 2:
                     t = (await get_tag(self.sep[1]))
-                    if t[0] in self.sep[1]: await kick(chat_id=self.PEER - 2000000000, member_id=t[0])
+                    if t['tag_id'] in self.sep[1]: await kick(chat_id=self.PEER - 2000000000, member_id=t['tag_id'])
                 else:
                     if self.reply: await kick(chat_id=self.PEER - 2000000000, member_id=self.reply.from_id)
             except Exception as e:

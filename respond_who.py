@@ -37,15 +37,15 @@ class WHO(object):
         if self.obj is not None:
             self.reply = self.obj.reply_message
             self.conv_id = self.obj.conversation_message_id
-        # print(self.reply)
-        # print(self.find_tag)
+        print("reply : : : ", self.reply)
+        print("findtag : : : ",self.find_tag)
         ######################################
         if self.reply is None:
             if self.find_tag:
                 self.tag = await get_tag(self.find_tag[0])
-                self.id = int(self.tag[2])
-                self.name = f"@id{self.tag[0]}({await getUserName(self.tag[0])})" if '@' in self.tag[1] \
-                    else f"@id{self.tag[0]}({self.tag[1]})"
+                self.id = int(self.tag['tag_id'])
+                self.name = f"@id{self.tag['tag_id']}({await getUserName(self.tag['tag_id'])})" if '@' in self.tag['tag_name'] \
+                    else f"@id{self.tag['tag_id']}({self.tag['tag_name']})"
             ######################################
         else:
             if int(self.reply.from_id) > 0:

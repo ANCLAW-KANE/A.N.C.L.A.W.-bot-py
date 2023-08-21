@@ -98,10 +98,10 @@ async def RandomMember(peer):
 async def get_tag(obj):
     try:
         tag_sep = obj.split(sep='|')
-        tag_id = tag_sep[0].replace('[id', '')
-        tag = re.findall(tag_id, obj)
+        tag_id = re.findall(tag_sep[0].replace('[id', ''), obj)
         tag_name = tag_sep[1].replace(']', '')
-        return [tag[0], tag_name, tag_id]
+        print({'tag_id':tag_id[0],'tag_name': tag_name})
+        return {'tag_id':tag_id[0],'tag_name': tag_name}
     except:
         return [None, None, None]
 
