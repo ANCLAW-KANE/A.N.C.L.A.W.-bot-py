@@ -1,10 +1,11 @@
 import random, math, re, traceback, sqlite3
-from online_tools import get_tag, get_list_album, GetMembers, kick, send_to_specific_peer
-from tools import json_config, Debug, logger, FSM, data_msg
+from hadlers_rules import MessageNotEmpty, PrefixCommandRule
+from online_tools import get_tag, get_list_album, GetMembers, kick, send
+from tools import json_config, Debug, logger, data_msg
 from managers import base_config, manager
-from sessions import vk, vk_user, vk_full, global_catalog_command, upload, file_log, api_user
+from sessions import vk, vk_user, global_catalog_command, upload, file_log, api_user, vb
 from CONFIG import IdGroupVK
-from enums import States_cook
+from vkbottle.bot import Message , BotLabeler
 
 
 ######################################################################################################
@@ -233,21 +234,19 @@ class Respondent_command(object):
 
 
 
-######################################################################################################
-######################################################################################################
-######################################################################################################
-class COMMAND(object):
-    def __init__(self, TEXT, _FROM, PEER, OBJ):
-        self.TEXT = TEXT
-        self._FROM = _FROM
-        self.PEER = PEER
-        self.OBJ = OBJ
-        self.CMD = str(self.TEXT).split(sep=' ')[0]
 
-    ##################################################################################
-    async def check(self):
-        respond = Respondent_command(self.TEXT, self._FROM, self.PEER, self.OBJ)
-        command = {
+######################################################################################################
+######################################################################################################
+######################################################################################################
+
+labeler = BotLabeler()
+
+@labeler.message(PrefixCommandRule(),blocking=False)
+async def command(msg: Message):
+    print("_________________________CMD_________________________")
+    cmd = str(msg.text).split(sep=' ')[0]
+    respond = Respondent_command(msg.text, msg.from_id, msg.peer_id, msg)
+    command = {
             '/кик': respond.manager_kick,
             '/мем': respond.get_album_photos_mem,
             '/cabal': respond.cabal_module,
@@ -255,10 +254,7 @@ class COMMAND(object):
             '/i': respond.info_module,
             '/d': respond.debug,
         }
-        if self.CMD in command:
-            key = command.get(self.CMD)
+    if cmd in command:
+            key = command.get(cmd)
             if key is not None: await key()
-
-######################################################################################################
-######################################################################################################
-######################################################################################################
+    await send(msg)

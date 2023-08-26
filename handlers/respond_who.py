@@ -3,14 +3,15 @@ import re
 import aiosqlite
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback, ShowSnackbarEvent
-
+from vkbottle.bot import Message, BotLabeler
 from CONFIG import IdGroupVK
-from online_tools import get_tag, getUserName, RandomMember
-from sessions import api_group
+from hadlers_rules import MessageNotEmpty, PrefixRoleRule
+from online_tools import get_tag, getUserName, RandomMember, send
+from sessions import api_group, vb
 from tools import DB_Manager, data_msg, keyboard_params
 
 
-class WHO(object):
+class ROLES(object):
     def __init__(self, fromid, peer, obj=None, msg=None, kb=None):
         self.comm = ''
         self.reply = self.kb_l = self.tag = self.id = self.name = self.string_ = self.string = self.s_len_ \
@@ -189,8 +190,19 @@ class WHO(object):
         await BD.close()
         self.msgstring = f"{key[0]}   {self.sender}  {key[1]}  {self.name}  {key[2]}"
 
+    async def nickname(self):
+        if self.s_len_ >=3:
+            nick = str(' '.join(self.string_[2:]))
+            if self.string_[1] == "мне":
+                BD = await aiosqlite.connect('peers.db')
+                edit = await BD.cursor()
+                await edit.execute(f"INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},'{nick}')")
+                await BD.commit()
+                
+
+
     ######################################################################################################
-    async def WHO_GET(self):
+    async def Check(self):
         await self.name_builder()
         await self.sender_name()
         #await self.marry_fix()
@@ -210,6 +222,7 @@ class WHO(object):
             items_func = {
                 "!брак": self.marry_query,
                 "!браки": self.marry_list,
+                "!ник": self.nickname
             }
             ##########################################################################################################
             if self.string[0] in items: self.msgstring = items.get(self.string[0])
@@ -220,3 +233,13 @@ class WHO(object):
             if self.word_comm in self.comm: await self.role()
             ###########################################################################################################
             if self.msgstring != '' and self.msgstring.find('None') == -1: data_msg.msg = self.msgstring
+
+
+
+labeler = BotLabeler()
+
+@labeler.message(PrefixRoleRule(),blocking=False)
+async def RoleCommand(msg: Message):
+    print("_________________________ROL_________________________")
+    await ROLES(fromid=msg.from_id, peer=msg.peer_id, msg=msg.text, obj=msg).Check()
+    await send(msg)

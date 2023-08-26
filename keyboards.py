@@ -1,5 +1,5 @@
-from respond_who import WHO
-from respond_priv import privileges
+from handlers.respond_who import ROLES
+from handlers.respond_priv import privileges
 from tools import keyboard_params
 from sessions import api_group
 
@@ -32,7 +32,7 @@ class keyboard_event(object):
     async def check_Callback(self):
         keyboard_params.user_respond = self.pay_val[1] if self.pay_val[1] else self.msg.user_id
         pay = {
-            'M': WHO(obj=self.msg,
+            'M': ROLES(obj=self.msg,
                      fromid=int(self.msg.user_id),
                      peer=int(self.msg.peer_id),
                      kb=[keyboard_params.user_sender,
@@ -54,7 +54,7 @@ class keyboard_event(object):
     async def check_event_msg(self):  # для совместимости с некоторыми клиентами (Kate mobile и тд)
         keyboard_params.user_respond = self.pay_val[1] if self.pay_val[1] else self.msg.from_id
         pay = {
-            'M': WHO(obj=self.msg,
+            'M': ROLES(obj=self.msg,
                      fromid=int(self.msg.from_id),
                      peer=int(self.msg.peer_id),
                      kb=[keyboard_params.user_sender,

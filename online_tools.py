@@ -2,7 +2,7 @@ import re, random, sqlite3
 from datetime import datetime
 from sessions import vk, api_group, size_values, platforms, max_user_id
 from CONFIG import IdGroupVK, full_permission_user_token
-from tools import json_config, TEXT_SPLIT, dict_to_str
+from tools import data_msg, json_config, TEXT_SPLIT, dict_to_str
 from vk_api.keyboard import VkKeyboard
 from vkbottle.http import AiohttpClient
 
@@ -137,3 +137,9 @@ def get_conversation_message_ids(peer, id_, ext, fields):
     return q
 
 ######################################################################################################################
+
+
+async def send(msg):
+    if data_msg.msg or data_msg.attachment:
+                await msg.answer(message=data_msg.msg, attachment=data_msg.attachment, keyboard=data_msg.keyboard)
+                data_msg()#очистка данных

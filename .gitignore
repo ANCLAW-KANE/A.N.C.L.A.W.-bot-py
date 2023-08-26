@@ -28,3 +28,13 @@ __pycache__/tools.cpython-311.pyc
 .vscode/settings.json
 MAIN.py.lprof
 CONFIG.py
+__pycache__/hadlers_rules.cpython-311.pyc
+ERROR.log
+.vscode/tasks.json
+handlers/__pycache__/__init__.cpython-311.pyc
+handlers/__pycache__/respond_func.cpython-311.pyc
+handlers/__pycache__/respond_priv.cpython-311.pyc
+handlers/__pycache__/respond_who.cpython-311.pyc
+handlers/__pycache__/message_new.cpython-311.pyc
+handlers/__pycache__/raw_event.cpython-311.pyc
+ERROR.log

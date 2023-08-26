@@ -1,0 +1,461 @@
+[08.21.2023 23:59:00 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 229, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 197, in nickname
+    await edit.execute(f'INSERT OR IGNORE INTO nicknames VALUES({self.peer,self.fromid,self.string_[2:]})')
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: 'салени', 'агурец'
+
+________________________
+
+
+
+[08.22.2023 00:02:02 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 229, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 197, in nickname
+    await edit.execute(f'INSERT OR IGNORE INTO nicknames VALUES({self.peer,self.fromid,str(self.string_[2:])})')
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: table nicknames has 3 columns but 1 values were supplied
+
+________________________
+
+
+
+[08.22.2023 00:08:46 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 229, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 197, in nickname
+    await edit.execute(f'INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},{str(self.string_[2:])})')
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: 'салени', 'агурец'
+
+________________________
+
+
+
+[08.22.2023 00:08:47 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 229, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 197, in nickname
+    await edit.execute(f'INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},{str(self.string_[2:])})')
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: 'салени', 'агурец'
+
+________________________
+
+
+
+[08.22.2023 17:32:49 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 230, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 198, in nickname
+    await edit.execute(f'INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},{" ".join(self.string_[2:])})')
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: хуй
+
+________________________
+
+
+
+[08.22.2023 17:41:35 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 230, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 198, in nickname
+    await edit.execute(f'INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},{" ".join(self.string_[2:])})')
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: хуй
+
+________________________
+
+
+
+[08.22.2023 17:45:45 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 230, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 198, in nickname
+    await edit.execute(f'INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},{" ".join(self.string_[2:])})')
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: хуй
+
+________________________
+
+
+
+[08.22.2023 17:49:18 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 230, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 198, in nickname
+    await edit.execute(f'INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},'{" ".join(self.string_[2:])})'')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: хуй
+
+________________________
+
+
+
+[08.22.2023 17:51:33 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 230, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 198, in nickname
+    await edit.execute(f"INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},'{' '.join(self.string_[2:])})'")
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: incomplete input
+
+________________________
+
+
+
+[08.22.2023 17:54:26 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 230, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 198, in nickname
+    await edit.execute(f"INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},{' '.join(self.string_[2:])})")
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: хуй
+
+________________________
+
+
+
+[08.22.2023 17:57:11 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 230, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 198, in nickname
+    await edit.execute(f"INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},{str(' '.join(self.string_[2:]))})")
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: хуй
+
+________________________
+
+
+
+[08.22.2023 18:01:24 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 175, in bot
+    await key()
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 230, in WHO_GET
+    if i is not None: await i()
+                      ^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 198, in nickname
+    await edit.execute(f"INSERT OR IGNORE INTO nicknames VALUES({self.peer},{self.fromid},{str(' '.join(self.string_[2:]))})")
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 48, in execute
+    await self._execute(self._cursor.execute, sql, parameters)
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\cursor.py", line 40, in _execute
+    return await self._conn._execute(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 133, in _execute
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\site-packages\aiosqlite\core.py", line 106, in run
+    result = function()
+             ^^^^^^^^^^
+sqlite3.OperationalError: no such column: хуй
+
+________________________
+
+
+
+[08.23.2023 11:14:58 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 164, in bot
+    await send(msg)
+  File "c:\k\project\PycharmProjects\bot2\online_tools.py", line 144, in send
+    await msg.answer(message=data_msg.msg, attachment=data_msg.attachment, keyboard=data_msg.keyboard)
+                                                      ^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'data_msg' has no attribute 'attachment'
+
+________________________
+
+
+
+[08.23.2023 11:15:36 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 164, in bot
+    await send(msg)
+  File "c:\k\project\PycharmProjects\bot2\online_tools.py", line 144, in send
+    await msg.answer(message=data_msg.msg, attachment=data_msg.attachment, keyboard=data_msg.keyboard)
+                                                      ^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'data_msg' has no attribute 'attachment'
+
+________________________
+
+
+
+[08.23.2023 12:17:08 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 143, in bot
+    if await MessageNotCommandRule.check():
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: MessageNotCommandRule.check() missing 2 required positional arguments: 'self' and 'm'
+
+________________________
+
+
+
+[08.23.2023 15:14:55 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 124, in bot
+    Dictwords,w = []
+    ^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 2, got 0)
+
+________________________
+
+
+
+[08.23.2023 15:15:00 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 124, in bot
+    Dictwords,w = []
+    ^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 2, got 0)
+
+________________________
+
+
+
+[08.23.2023 15:15:27 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 124, in bot
+    Dictwords,w = []
+    ^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 2, got 0)
+
+________________________
+
+
+
+[08.23.2023 15:15:34 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 124, in bot
+    Dictwords,w = []
+    ^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 2, got 0)
+
+________________________
+
+
+
+[08.23.2023 18:23:36 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 167, in bot
+    if MessageNotCommandRule:#исправить
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\keyboards.py", line 73, in check_event_msg
+    if self.pay_key_sep[0] is not None: await pay.get(self.pay_key_sep[0])()
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 97, in marry_control
+    if info: await api_group.messages.send_message_event_answer(event_id=self.obj.event_id,
+                                                                         ^^^^^^^^^^^^^^^^^
+AttributeError: 'MessageMin' object has no attribute 'event_id'
+
+________________________
+
+
+
+[08.23.2023 18:28:58 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 167, in bot
+    if MessageNotCommandRule:#исправить
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\keyboards.py", line 73, in check_event_msg
+    if self.pay_key_sep[0] is not None: await pay.get(self.pay_key_sep[0])()
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\k\project\PycharmProjects\bot2\respond_who.py", line 97, in marry_control
+    if info: await api_group.messages.send_message_event_answer(event_id=self.obj.event_id,
+                                                                         ^^^^^^^^^^^^^^^^^
+AttributeError: 'MessageMin' object has no attribute 'event_id'
+
+________________________
+
+
+
+[08.24.2023 16:00:14 | INFO]: 
+________________________
+Traceback (most recent call last):
+  File "c:\k\project\PycharmProjects\bot2\MAIN.py", line 128, in bot_event
+    TEXT = msg.text
+           ^^^^^^^^
+AttributeError: 'MessageNew' object has no attribute 'text'
+
+________________________
+
+
+

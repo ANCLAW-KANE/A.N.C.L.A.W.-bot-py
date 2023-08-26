@@ -2,10 +2,11 @@ import aiosqlite
 import traceback
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
-
+from vkbottle.bot import Message, BotLabeler
 from CONFIG import IdGroupVK
-from online_tools import RandomMember, getUserName
-from sessions import api_group, max_user_id
+from hadlers_rules import MessageNotEmpty, PrefixPrevilegesRule
+from online_tools import RandomMember, getUserName, send
+from sessions import api_group, max_user_id, vb
 from tools import json_config, logger, data_msg, keyboard_params, DB_Manager
 
 
@@ -87,3 +88,11 @@ class privileges(object):
                         keyboard_params(False, False, False, False, "*адская похоть*").build()}),
                          color=KeyboardButtonColor.NEGATIVE).get_json()
 ######################################################################################################
+
+labeler = BotLabeler()
+
+@labeler.message(PrefixPrevilegesRule(),blocking=False)
+async def command(msg: Message):
+    print("_________________________PRG_________________________")
+    await privileges(txt=msg.text, sender=msg.from_id, peer=msg.peer_id, obj=msg).check()
+    await send(msg)
