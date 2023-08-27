@@ -173,12 +173,13 @@ async def convert_img(inpt, output_name, convert_to):
 
 
 ############################################################################
-def logger(inf, name='Log.log'):
-    file_log = logging.FileHandler(name, 'a', 'utf-8')
+def logger():
+    """file_log = logging.FileHandler(name, 'a', 'utf-8')
     console_out = logging.StreamHandler()
     logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(levelname)s]: %(message)s',
                         datefmt='%m.%d.%Y %H:%M:%S', level=logging.INFO)
-    logging.info(inf)
+    logging.info(inf)"""
+    pass
 
 
 ############################################################################

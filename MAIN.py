@@ -1,8 +1,8 @@
 import os
 import tracemalloc
-import loguru
 import aiosqlite
-
+from loguru import logger
+from enums import Colors
 from handlers import lb
 from CONFIG import config_file_json
 from online_tools import getUserName
@@ -17,13 +17,15 @@ from tools import write_file_json, read_file_json, json_config, data_msg
 
 ###################################### init, log ######################################
 aiosqlite.core.LOG.disabled = True
+
+logger.level("STATE", no=33, color="<yellow>")
 tracemalloc.start()
 data_msg()
 for label in lb: vb.labeler.load(label)
 #######################################################################################
 
 async def start_create():
-    print("_________________________STR_________________________")
+    logger.log("STATE","\n_________________________STR_________________________")
     if not os.path.isfile(config_file_json):
         write_file_json(config_file_json, json_config().return_json())
     for z in file_log:
@@ -51,7 +53,7 @@ async def start_create():
 
 @vb.loop_wrapper.interval(hours=3) #(seconds=10)
 async def marry_fix():
-    print("_________________________LW1_________________________")
+    logger.log("STATE","\n_________________________LW1_________________________")
     BD = await aiosqlite.connect('peers.db')
     edit = await BD.cursor()
     ids = await(await edit.execute(f"SELECT man1 ,man2 from marry")).fetchall()

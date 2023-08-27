@@ -1,7 +1,9 @@
 import random, math, re, traceback, sqlite3
-from hadlers_rules import MessageNotEmpty, PrefixCommandRule
+
+from loguru import logger
+from hadlers_rules import PrefixCommandRule
 from online_tools import get_tag, get_list_album, GetMembers, kick, send
-from tools import json_config, Debug, logger, data_msg
+from tools import json_config, Debug, data_msg
 from managers import base_config, manager
 from sessions import vk, vk_user, global_catalog_command, upload, file_log, api_user, vb
 from CONFIG import IdGroupVK
@@ -134,7 +136,7 @@ class Respondent_command(object):
                     data_msg.msg = ''
                     data_msg.attachment = f"photo{str(self.OWNER_ALBUM_PHOTO)}_{random.choice(photoList)}"
         except Exception as e:
-            logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n", "ERROR.log")
+            #logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n", "ERROR.log")
             data_msg.msg = f'блядь я мем пробухал\n {e}'
             data_msg.attachment = 'photo388145277_456240127'
 
@@ -149,8 +151,8 @@ class Respondent_command(object):
                 else:
                     if self.reply: await kick(chat_id=self.PEER - 2000000000, member_id=self.reply.from_id)
             except Exception as e:
-                await logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n",
-                       "ERROR.log")
+                #await logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n",
+                #       "ERROR.log")
                 data_msg.msg = f"НЕЛЬЗЯ МУДИЛА \n{e}"
         else:
             data_msg.msg = "Ты не админ"
@@ -165,7 +167,7 @@ class Respondent_command(object):
                 await api_user.messages.add_chat_user(chat_id=self.sep[2], user_id=self.sep[3],
                                                       visible_messages_count=1000)
         except Exception as e:
-            logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n", "ERROR.log")
+            #logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n", "ERROR.log")
             data_msg.msg = f"НЕЛЬЗЯ МУДИЛА \n{e}"
 
     #######################################очистка доков в группе ######################################
@@ -191,8 +193,8 @@ class Respondent_command(object):
             try:
                 u += [upload.document(doc=f, title=f, group_id=IdGroupVK, to_wall=0)]
             except:
-                logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n",
-                       "ERROR.log")
+                #logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n",
+                #       "ERROR.log")
                 pass
         for f in u: att.append(f"doc{str(f['doc']['owner_id'])}_{str(f['doc']['id'])}")
         vk.messages.send(random_id=0, peer_id=self.PEER, attachment=att)
@@ -243,7 +245,7 @@ labeler = BotLabeler()
 
 @labeler.message(PrefixCommandRule(),blocking=False)
 async def command(msg: Message):
-    print("_________________________CMD_________________________")
+    logger.log("STATE","\n_________________________CMD_________________________")
     cmd = str(msg.text).split(sep=' ')[0]
     respond = Respondent_command(msg.text, msg.from_id, msg.peer_id, msg)
     command = {

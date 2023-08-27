@@ -38,3 +38,5 @@ handlers/__pycache__/respond_who.cpython-311.pyc
 handlers/__pycache__/message_new.cpython-311.pyc
 handlers/__pycache__/raw_event.cpython-311.pyc
 ERROR.log
+mintty.exe.stackdump
+p.py

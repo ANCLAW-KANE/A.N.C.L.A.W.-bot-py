@@ -14,3 +14,9 @@ async def a(msg: Message):
 vb.run_forever()
 '''
 
+cl = []
+for i in range(0, 256): 
+    cl.append(f'\x1b[38;5;{i}m')
+for _ in range(0,101):
+    for z in cl:
+        print(f"■{z}",end='')

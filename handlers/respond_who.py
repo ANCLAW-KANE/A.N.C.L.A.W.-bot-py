@@ -1,13 +1,14 @@
 import random
 import re
 import aiosqlite
+from loguru import logger
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback, ShowSnackbarEvent
 from vkbottle.bot import Message, BotLabeler
 from CONFIG import IdGroupVK
-from hadlers_rules import MessageNotEmpty, PrefixRoleRule
+from hadlers_rules import PrefixRoleRule
 from online_tools import get_tag, getUserName, RandomMember, send
-from sessions import api_group, vb
+from sessions import api_group
 from tools import DB_Manager, data_msg, keyboard_params
 
 
@@ -240,6 +241,6 @@ labeler = BotLabeler()
 
 @labeler.message(PrefixRoleRule(),blocking=False)
 async def RoleCommand(msg: Message):
-    print("_________________________ROL_________________________")
+    logger.log("STATE","\n_________________________ROL_________________________")
     await ROLES(fromid=msg.from_id, peer=msg.peer_id, msg=msg.text, obj=msg).Check()
     await send(msg)

@@ -1,13 +1,14 @@
 import aiosqlite
 import traceback
+from loguru import logger
 
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import Message, BotLabeler
 from CONFIG import IdGroupVK
-from hadlers_rules import MessageNotEmpty, PrefixPrevilegesRule
+from hadlers_rules import PrefixPrevilegesRule
 from online_tools import RandomMember, getUserName, send
-from sessions import api_group, max_user_id, vb
-from tools import json_config, logger, data_msg, keyboard_params, DB_Manager
+from sessions import api_group, max_user_id
+from tools import json_config, data_msg, keyboard_params, DB_Manager
 
 
 ######################################################################################################
@@ -40,7 +41,8 @@ class privileges(object):
                 if E_G[4] == '1':
                     data_msg.msg = f"{await RandomMember(self.peer)} насилует {await RandomMember(self.peer)}"
         except:
-            logger(f"\n_____________________\n{traceback.format_exc()}\n_____________________\n\n\n", "ERROR.log")
+            pass
+            #logger(f"\n_____________________\n{traceback.format_exc()}\n_____________________\n\n\n", "ERROR.log")
         await BD.close()
 
     ######################################################################################################
@@ -93,6 +95,6 @@ labeler = BotLabeler()
 
 @labeler.message(PrefixPrevilegesRule(),blocking=False)
 async def command(msg: Message):
-    print("_________________________PRG_________________________")
+    logger.log("STATE","\n_________________________PRG_________________________")
     await privileges(txt=msg.text, sender=msg.from_id, peer=msg.peer_id, obj=msg).check()
     await send(msg)

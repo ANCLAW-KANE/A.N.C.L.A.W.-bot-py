@@ -1,5 +1,8 @@
 from enum import Enum
 
+Colors={
+    'PURPLE_1' : '\x1b[38;5;99m'
+}
 
 class States_cook(Enum):
     NULL = ["-1", ""]

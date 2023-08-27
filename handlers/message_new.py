@@ -2,6 +2,7 @@ import json
 import random
 import traceback
 import aiosqlite
+from loguru import logger
 
 from vkbottle.bot import Message , BotLabeler
 
@@ -9,14 +10,14 @@ from keyboards import keyboard_event
 from online_tools import send
 from handlers.respond_priv import privileges
 from sessions import api_group
-from tools import json_config, logger, data_msg
+from tools import json_config, data_msg
 from hadlers_rules import MessageNotCommandRule
 
 labeler = BotLabeler()
 
 @labeler.message(MessageNotCommandRule(), blocking=False)
 async def bot(msg: Message):
-    print("_________________________MSG_________________________")
+    logger.log("STATE","\n_________________________MSG_________________________")
     #print(msg)
     BD = await aiosqlite.connect('peers.db')
     edit = await BD.cursor()
@@ -94,8 +95,8 @@ async def bot(msg: Message):
 
     ###########################################################################################
     except Exception as ex:
-        logger(
-            f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n", "ERROR.log")
+        #logger(
+        #    f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n", "ERROR.log")
         await api_group.messages.send(message=f"WARNING : {json_config().cfg_json()['users_list_warn']}\n\n"
                                               f"{ex} \n {msg.peer_id} \n {traceback.format_exc()}",
                                       peer_id=json_config().cfg_json()['PEER_CRUSH_EVENT'], random_id=0)
