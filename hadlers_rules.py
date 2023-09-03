@@ -1,6 +1,8 @@
 from loguru import logger
+from sqlalchemy import select
 from vkbottle.bot import Message
 from vkbottle.dispatch.rules import ABCRule,OrRule
+from database_module.Tables import Peers,peerDB,DBexec
 
 prefixs = ['/','!','*']
 
@@ -32,6 +34,20 @@ class MessageNotCommandRule(OrRule[Message]):
         if m.text != '' or None:
             logger.log("STATE","\n___NOTCOMMRULE___")
             return m.text[0] not in prefixs
+
+class MsgParamWordsRule(ABCRule[Message]):
+    async def check(self, m:Message)  -> bool:
+        if m.text != '' or None:
+            logger.log("STATE","\n___WORDRULE___")
+            w = await DBexec(peerDB,select(Peers.words)).dbselect("one")
+            return w == 1
+        
+class MsgParamQuoteRule(ABCRule[Message]):
+    async def check(self, m:Message)  -> bool:
+        if m.text != '' or None:
+            logger.log("STATE","\n___QUOTERULE___")
+            q = await DBexec(peerDB,select(Peers.quotes)).dbselect("one")
+            return q == 1
     
 
     

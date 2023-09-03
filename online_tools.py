@@ -1,6 +1,6 @@
-import re, random, sqlite3
+import re, random
 from datetime import datetime
-from sessions import vk, api_group, size_values, platforms, max_user_id
+from sessions import api_group, size_values, platforms, max_user_id
 from CONFIG import IdGroupVK, full_permission_user_token
 from tools import data_msg, json_config, TEXT_SPLIT, dict_to_str
 from vk_api.keyboard import VkKeyboard
@@ -20,9 +20,9 @@ async def kick(chat_id, member_id):
 
 
 ######################################################################################################################
-def send_to_specific_peer(msg, peerID, key=None):
+"""def send_to_specific_peer(msg, peerID, key=None):
     msg = TEXT_SPLIT(msg, 4000)
-    for z in msg: vk.messages.send(random_id=0, message=z, peer_id=peerID, keyboard=key)
+    for z in msg: vk.messages.send(random_id=0, message=z, peer_id=peerID, keyboard=key)"""
 
 
 ######################################################################################################################

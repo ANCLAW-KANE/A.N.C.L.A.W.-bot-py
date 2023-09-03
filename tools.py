@@ -1,9 +1,9 @@
-﻿import json, random, string, logging, sys, psutil, os, aiosqlite, pickledb
+﻿import json, random, string, sys, psutil, os, aiosqlite, pickledb
 from dataclasses import dataclass
 from subprocess import check_output
 from PIL import Image
 from CONFIG import config_file_json
-from enums import States_cook
+import pickledb
 
 
 ################################ TOOLS ##############################################
@@ -173,16 +173,6 @@ async def convert_img(inpt, output_name, convert_to):
 
 
 ############################################################################
-def logger():
-    """file_log = logging.FileHandler(name, 'a', 'utf-8')
-    console_out = logging.StreamHandler()
-    logging.basicConfig(handlers=(file_log, console_out), format=u'[%(asctime)s | %(levelname)s]: %(message)s',
-                        datefmt='%m.%d.%Y %H:%M:%S', level=logging.INFO)
-    logging.info(inf)"""
-    pass
-
-
-############################################################################
 def TEXT_SPLIT(OBJ, N):
     return [OBJ[i:i + N] for i in range(0, len(OBJ) - (len(OBJ) // N), N)] if OBJ != 0 else ''
 
@@ -211,8 +201,8 @@ class Debug(object):
 
 ######################################################################################################################
 class json_config:
-    def __init__(self):
-        self.dictionary = {
+    def __init__(self,name=config_file_json):
+        self.sys = {
             'idGroupTelegram': 0,
             'PEER_CRUSH_EVENT': 0,
             'CAPTCHA_EVENT': 0,
@@ -220,29 +210,15 @@ class json_config:
             'users_list_warn': [],
             'EVIL_GODS': []
         }
-        self.reader = read_file_json(config_file_json)
-        if self.reader is not None:
-            self.config = {
-            ################## Целое число ###############################
-            'idGroupTelegram': self.reader['idGroupTelegram'],
-            # Общий канал для незарегестрированных чатов
-            'PEER_CRUSH_EVENT': self.reader['PEER_CRUSH_EVENT'],
-            'CAPTCHA_EVENT': self.reader['CAPTCHA_EVENT'],
-            'OWNER_ALBUM_PHOTO': self.reader['OWNER_ALBUM_PHOTO'],
-            ################## Списки и строки ###############################
-            'users_list_warn': self.reader['users_list_warn'],  # теги оповещения в вк о падении
-            'EVIL_GODS': self.reader['EVIL_GODS'],
-            }
-        else:
-            self.config = {}
+        self.name = name
+        self.db = pickledb.load(location=self.name,auto_dump=True, sig=True)
 
-    ############################################################################
-    def return_json(self):
-        return self.dictionary
+    def create(self,dir="sys"):
+        if not os.path.isfile(self.name):
+            self.db.set(dir, self.sys)
 
-    ############################################################################
-    def cfg_json(self):
-        return self.config
+    def read_key(self,dir,key):
+        return self.db.get(dir)[key]
 
 
 ######################################################################################################################
@@ -255,13 +231,13 @@ class FSM(object):
         self.target = str(target)
         self.field = f"{self.obj}_{self.target}"
 
-    def get_state(self):
+    def get_state(self,obj):
         print(self.field)
         db = pickledb.load("states.db", False)
         try:
             return db[self.field]
         except KeyError:
-            return States_cook.NULL.value
+            return obj.NULL.value
 
     def set_state(self, value):
         db = pickledb.load("states.db", False)

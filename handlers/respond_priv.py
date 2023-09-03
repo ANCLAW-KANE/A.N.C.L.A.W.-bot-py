@@ -1,15 +1,15 @@
-import aiosqlite
-import traceback
 from loguru import logger
-
+from sqlalchemy import select
 from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import Message, BotLabeler
 from CONFIG import IdGroupVK
+from database_module.Tables import Peers,peerDB,DBexec
 from hadlers_rules import PrefixPrevilegesRule
 from online_tools import RandomMember, getUserName, send
 from sessions import api_group, max_user_id
 from tools import json_config, data_msg, keyboard_params, DB_Manager
-
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 ######################################################################################################
 class privileges(object):
@@ -21,14 +21,16 @@ class privileges(object):
         self.obj = obj
         self.kb = kb
         self.cnvmgid = self.obj.conversation_message_id
-        self.EVIL_GODS = json_config().cfg_json()['EVIL_GODS']
-
+        self.EVIL_GODS = json_config().read_key(dir="sys",key='EVIL_GODS')
     ################## привелегия для удаления сообщений не админов(ультимативный мут) #################
     async def EVIL_GOD(self):
-        BD = await aiosqlite.connect('peers.db')
-        edit = await BD.cursor()
-        await edit.execute(f"SELECT * FROM peers WHERE peer_id = {self.peer}")
-        E_G = await edit.fetchone()
+        E_G = await DBexec(peerDB,select(Peers).where(Peers.peer_id == self.peer)).dbselect("one")
+        """SessionPeer = scoped_session(sessionmaker(bind=peerDB,class_=AsyncSession, expire_on_commit=False, autoflush=True))()
+        async with SessionPeer as s:
+            async with s.begin_nested():
+                E_G = (await s.execute(select(Peers).where(Peers.peer_id == self.peer))).fetchone()
+            await s.close()"""
+        print("eg ",E_G)
         # print(self.sender)
         try:
             if self.sender not in self.EVIL_GODS and 0 < self.sender < max_user_id:
@@ -43,7 +45,6 @@ class privileges(object):
         except:
             pass
             #logger(f"\n_____________________\n{traceback.format_exc()}\n_____________________\n\n\n", "ERROR.log")
-        await BD.close()
 
     ######################################################################################################
     async def check(self):
