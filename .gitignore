@@ -40,3 +40,10 @@ handlers/__pycache__/raw_event.cpython-311.pyc
 ERROR.log
 mintty.exe.stackdump
 p.py
+__pycache__/Tables.cpython-311.pyc
+handlers/__pycache__/template_response_handler.cpython-311.pyc
+__pycache__/exceptions.cpython-311.pyc
+database_module/__pycache__/__init__.cpython-311.pyc
+database_module/__pycache__/Tables.cpython-311.pyc
+handlers/__pycache__/keyboards.cpython-311.pyc
+peers.db

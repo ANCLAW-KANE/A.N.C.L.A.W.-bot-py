@@ -1,1 +1,10 @@
-{"idGroupTelegram": 0, "PEER_CRUSH_EVENT": 0, "CAPTCHA_EVENT": 0, "OWNER_ALBUM_PHOTO": 388145277, "users_list_warn": [], "EVIL_GODS": []}
+{
+    "sys": {
+        "idGroupTelegram": 1,
+        "PEER_CRUSH_EVENT": 0,
+        "CAPTCHA_EVENT": 0,
+        "OWNER_ALBUM_PHOTO": 0,
+        "users_list_warn": [1],
+        "EVIL_GODS": []
+    }
+}

@@ -5,7 +5,7 @@ from hadlers_rules import PrefixCommandRule
 from online_tools import get_tag, get_list_album, GetMembers, kick, send
 from tools import json_config, Debug, data_msg
 from managers import base_config, manager
-from sessions import vk, vk_user, global_catalog_command, upload, file_log, api_user, vb
+from sessions import global_catalog_command, file_log, api_user, vb
 from CONFIG import IdGroupVK
 from vkbottle.bot import Message , BotLabeler
 
@@ -25,8 +25,8 @@ class Respondent_command(object):
         self.len_sep = len(self.sep)
         self.len_sep_query = len(self.sep_query)
         self.reply = self.OBJ.reply_message
-        self.OWNER_ALBUM_PHOTO = json_config().cfg_json()['OWNER_ALBUM_PHOTO']
-        self.EVIL_GODS = json_config().cfg_json()['EVIL_GODS']
+        self.OWNER_ALBUM_PHOTO = json_config().read_key('sys','OWNER_ALBUM_PHOTO')
+        self.EVIL_GODS = json_config().read_key('sys','EVIL_GODS')
         self.Members = None
 
     ######################################################################################################
@@ -172,10 +172,10 @@ class Respondent_command(object):
 
     #######################################очистка доков в группе ######################################
     async def clear_docs(self):
-        d = vk_user.docs.get(owner_id='-' + str(IdGroupVK))
-        docs = []
-        for item in d['items']: docs.append(str(item['id']))
-        for doc_ in docs: await api_user.docs.delete(owner_id='-' + str(IdGroupVK), doc_id=doc_)
+        #d = vk_user.docs.get(owner_id='-' + str(IdGroupVK))
+        #docs = []
+        #for item in d['items']: docs.append(str(item['id']))
+        #for doc_ in docs: await api_user.docs.delete(owner_id='-' + str(IdGroupVK), doc_id=doc_)
         data_msg.msg = 'Удаление завершено'
 
     ####################################### E X T E R M I N A T U S ######################################
@@ -189,15 +189,15 @@ class Respondent_command(object):
     async def download_log(self):
         u = []
         att = []
-        for f in file_log:
-            try:
-                u += [upload.document(doc=f, title=f, group_id=IdGroupVK, to_wall=0)]
-            except:
+        #for f in file_log:
+        #    try:
+        #        u += [upload.document(doc=f, title=f, group_id=IdGroupVK, to_wall=0)]
+        #    except:
                 #logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n",
                 #       "ERROR.log")
-                pass
-        for f in u: att.append(f"doc{str(f['doc']['owner_id'])}_{str(f['doc']['id'])}")
-        vk.messages.send(random_id=0, peer_id=self.PEER, attachment=att)
+        #        pass
+        #for f in u: att.append(f"doc{str(f['doc']['owner_id'])}_{str(f['doc']['id'])}")
+        #vk.messages.send(random_id=0, peer_id=self.PEER, attachment=att)
 
     async def sql_cmd(self):
         if len(self.line) == 2 and self.len_sep == 3:
