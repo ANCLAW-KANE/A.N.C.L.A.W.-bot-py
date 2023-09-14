@@ -1,62 +1,125 @@
-﻿import json, random, string, sys, psutil, os, aiosqlite, pickledb
-from dataclasses import dataclass
-from subprocess import check_output
+﻿
+from functools import reduce
+from itertools import chain
+import json, random, string, os, aiosqlite, pickledb,re,glob
 from PIL import Image
 from CONFIG import config_file_json
-import pickledb
+from zipstream import AioZipStream
+############################################################################
 
+
+class Patterns:
+    user_pattern = r"\[id(\d+)\|(@?\w+)\]"
+    club_pattern = r"\[club(\d+)\|(@?\w+)\]"
+
+    def pattern_bool(text,patterns,logic="and")-> bool:
+        bools = []
+        for pattern in patterns:
+            matches = re.findall(pattern, text)
+            if matches: bools.append(matches)
+        if logic == "and": return all(bools)
+        if logic == "or": return any(bools)
+
+    def get_mentions(text):
+        user_matches = re.findall(Patterns.user_pattern, text)
+        club_matches = re.findall(Patterns.club_pattern, text)  
+        if user_matches == [] and club_matches == []:
+            return None
+        else:
+            dict_users = [{'id': user[0], 'text': user[1]} for user in user_matches]
+            dict_clubs = [{'id': club[0], 'text': club[1]} for club in club_matches]
+            dict_inverted_clubs = [{'id': -int(club[0]), 'text': club[1]} for club in club_matches]
+            return {"users": dict_users,"clubs": dict_clubs,"invert_ids_clubs":dict_inverted_clubs}
 
 ################################ TOOLS ##############################################
-def to_tuple(obj):  # li
-    return str(list(obj)).replace('[', '').replace(']', '')
 
+class Formatter():
+    class DictClass:
+        def reverse_dict(obj: dict):
+            return dict(reversed(obj.items()))
 
-def to_list(obj):
-    return list(str(list(obj)).replace('[', '').replace(']', '').split(','))
+        def join_dict_keys(obj: list):
+            """
+            вернет все вложенные ключи
+            [{'a': 1, 'b': 2}, {'c': 3, 'd': 4}] -> ['a', 'b', 'c', 'd']
+            """
+            list(chain.from_iterable(obj.keys() for obj in obj))
 
+        def join_dict(obj: list):
+            """
+            вернет единый словарь [{'a': 1}, {'b': 2}, {'c': 3}] -> {'a': 1, 'b': 2, 'c': 3}
+            """
+            return reduce(lambda x, y: {**x, **y}, obj)
 
+        def dict_to_str(obj: dict, sep: str , sep_spec: str):
+            """
+            вернет строку параметров: ключ{sep}значение
+            """
+            return f'{sep_spec}'.join('{}{}{}'.format(key, sep, val) for key, val in obj.items())
+
+    def reformat_mention(obj):
+        return str(obj).replace("@","[").replace("(","|").replace(")","]")
+
+    def to_tuple(obj):  # li
+        return str(list(obj)).replace('[', '').replace(']', '')
+
+    def to_list(obj):
+        return list(str(list(obj)).replace('[', '').replace(']', '').split(','))
+
+    def text_split(obj, N):
+        return [obj[i:i + N] for i in range(0, len(obj) - (len(obj) // N), N)] if obj != 0 else ''
+    
 ############################################################################
-def write_file(name, getfile):
-    with open(name, 'bw') as f: f.write(getfile)
+
+class Writer:
+
+    async def find_file(path):
+        return glob.glob(path)
+
+    """async def create_archive(file_path: str, output_path: str):
+        with await zipfile.ZipFile(output_path, 'w') as zipf:
+            for root, _, files in await os.walk(file_path):
+                for file in files:
+                    file_path = await os.path.join(root, file)
+                    await zipf.write(file_path, os.path.relpath(file_path, output_path))"""
+
+    def create_list_zip(dir):
+        listzip = []
+        for f in os.listdir(dir):
+            fp = os.path.join(dir, f)
+            if os.path.isfile(fp):
+                listzip.append({'file': fp})
+        return listzip
+    
+    async def create_bytes_archive(file_path):#, output_path: str
+        #async with asyncio.Lock():
+            byte = []
+            aiozip = AioZipStream(file_path, chunksize=32768).stream()
+            async for z in aiozip: byte.append(z)
+            return b"".join(byte)
+
+    async def create_file_archive(zipname,file_path):#, output_path: str      
+        #async with asyncio.Lock():
+            aiozip = AioZipStream(file_path, chunksize=32768)
+            with open(zipname, mode='wb') as z:
+                async for chunk in aiozip.stream():
+                    z.write(chunk)
 
 
-############################################################################
-def read_file_json(name):
-    try:
-        with open(name, "r") as f:  data = json.load(f)
-        return data
-    except:
-        print("Файл отсутствует или поврежден")
+    def write_file(name, getfile):
+        with open(name, 'bw') as f: f.write(getfile)
 
 
-############################################################################
-def write_file_json(name, data):
-    with open(name, "w") as f:  json.dump(data, f)
+    def read_file_json(name):
+        try:
+            with open(name, "r") as f:  data = json.load(f)
+            return data
+        except:
+            print("Файл отсутствует или поврежден")
 
+    def write_file_json(name, data):
+        with open(name, "w") as f:  json.dump(data, f)
 
-############################################################################
-def reverse_dict(get_dict):
-    reverse = []
-    for key in get_dict.keys(): reverse.append((get_dict[key], key))
-    return dict(reverse)
-
-
-############################################################################
-def join_dict_keys(arg):
-    args = []
-    for a in arg: args += list(a.keys())
-    return args
-
-
-############################################################################
-def join_dict(arg):
-    args = []
-    for a in arg: args += list(a.items())
-    return dict(args)
-
-
-def dict_to_str(d: dict, sep: str):
-    return ''.join('{}{}{}'.format(key, sep, val) for key, val in d.items())
 
 
 ############################################################################
@@ -97,7 +160,7 @@ class DB_Manager(object):
         new.m2 = self.m2 if m2 is None else m2
         new.update = self.update if update is None else update
         new.arg = self.arg if arg is None else arg
-        print(new, new.__dict__)
+        #print(new, new.__dict__)
         return new
 
     async def __connect__(self):
@@ -172,33 +235,6 @@ async def convert_img(inpt, output_name, convert_to):
     await ipng.save(output_name, convert_to)
 
 
-############################################################################
-def TEXT_SPLIT(OBJ, N):
-    return [OBJ[i:i + N] for i in range(0, len(OBJ) - (len(OBJ) // N), N)] if OBJ != 0 else ''
-
-
-############################################################################
-############################################################################
-
-class Debug(object):
-    def __init__(self, obj=None, pid=None):
-        self.obj = sys.getsizeof(obj)
-        self.pid = int(check_output(["pidof", "-s", pid])) if pid is not None else os.getpid()
-        self.proc = psutil.Process(self.pid)
-
-    ############################################################################
-    def obj_size(self):
-        return self.obj
-
-    ############################################################################
-    def process_mem_size(self):
-        return self.proc.memory_info()
-
-    ############################################################################
-    def process_mem_map(self):
-        return self.proc.memory_maps()
-
-
 ######################################################################################################################
 class json_config:
     def __init__(self,name=config_file_json):
@@ -256,43 +292,56 @@ class FSM(object):
         #    print(z[1])
         #    return z[1]
 
-
-@dataclass()
+############################################################################
 class data_msg:
-    msg: str
-    attachment: str
-    doc: str
-    keyboard: str
+    def __init__(self, msg: str = None, attachment: str = None, _reply: str = None, keyboard: str = None):
+        self.msg = msg
+        self.attachment = attachment
+        self._reply = _reply
+        self.keyboard = keyboard
 
-    def __init__(self):
-        data_msg.msg = None
-        data_msg.attachment = None
-        data_msg.doc = None
-        data_msg.keyboard = None
+    def check_empty(self) -> bool:
+        return self.msg is not None or self.attachment is not None \
+            or self._reply is not None or self.keyboard is not None
+    
+    async def send(self,obj):
+        if self.check_empty():
+            await obj.answer(
+                message = self.msg,
+                attachment  = self.attachment,
+                random_id = random.Random().randint(0, 1000000000),
+                reply_to  = self._reply,
+                forward_messages = None,
+                forward  = None,
+                sticker_id  = None,
+                keyboard  = self.keyboard,
+                template  = None,
+                payload  = None,
+                content_source  = None,
+                dont_parse_links  = None,
+                disable_mentions  = None,
+                intent  = None,
+                subscribe_id  = None)
 
 
-@dataclass()
+############################################################################
 class keyboard_params:
-    user_sender: str
-    user_respond: str
-    conv_msg_id_new: str
-    conv_msg_id_old: str
-    pay_dir: str
+    """
+    ### параметры для payload ###
+    user_sender: str  - id отправителя
+    user_recipient: str - id адресата
+    conv_msg_id_old: str - запоминает id сообщения с созданной клавиатурой
+    pay_dir: str - доп параметры
+    """
 
-    def __init__(self, user_sender=None, user_respond=None, conv_msg_id_new=None,
-                 conv_msg_id_old=None, pay_dir=None):
+    def __init__(self, user_sender=False, user_recipient=False,conv_msg_id_old=False, pay_dir=False):
         self.user_sender = user_sender
-        self.user_respond = user_respond
-        self.conv_msg_id_new = conv_msg_id_new
+        self.user_recipient = user_recipient
         self.conv_msg_id_old = conv_msg_id_old
         self.pay_dir = pay_dir
 
-    def build(self): return [self.user_sender, self.user_respond, self.conv_msg_id_new, self.conv_msg_id_old,
-                             self.pay_dir]
-
-    def clear(self):
-        self.user_sender = ""
-        self.user_respond = ""
-        self.conv_msg_id_new = ""
-        self.conv_msg_id_old = ""
-        self.pay_dir = ""
+    def build(self): return {"sender":    self.user_sender, 
+                             "recipient": self.user_recipient, 
+                             "msg_old": self.conv_msg_id_old,
+                             "dir":     self.pay_dir}
+ 

@@ -3,7 +3,7 @@ import aiosqlite
 
 from CONFIG import config_file_json, ADMIN_JSON_CONFIG
 from online_tools import GetMembers
-from tools import to_tuple, read_file_json, write_file_json, json_config, data_msg, DB_Manager
+from tools import Formatter,Writer, json_config, data_msg, DB_Manager
 
 types = {
     'int': int,
@@ -33,7 +33,7 @@ class manager(object):
     async def word(self):
         self.mem = (await GetMembers(self.peer))
         num = await DB_Manager('peers_words.db', f"SELECT * FROM '{str(self.peer)}' ", on_index=0).BD_COUNT()
-        t_m = list(map(to_tuple, [self.word_sep_l[1].splitlines(), self.word_sep_l[2].splitlines()]))
+        t_m = list(map(Formatter.to_tuple, [self.word_sep_l[1].splitlines(), self.word_sep_l[2].splitlines()]))
         words = {
             ((3, 3), 'create'): (f"INSERT OR IGNORE INTO '{str(self.peer)}' VALUES("
                                  f"{int(max(num) + 1)}, "
@@ -42,7 +42,7 @@ class manager(object):
                                  "Создано",
                                  1, self.mem['all_members']),
             ((2, 3), 'delete'): (f"DELETE FROM '{str(self.peer)}' where id IN ("
-                                 f"{to_tuple(self.word_sep_l[1].split(sep=' '))})",
+                                 f"{Formatter.to_tuple(self.word_sep_l[1].split(sep=' '))})",
                                  "Удалено",
                                  1, self.mem['all_members']),
             ((1, 3), 'kill'): (f"DELETE FROM '{str(self.peer)}'",
@@ -66,7 +66,7 @@ class manager(object):
         self.mem = (await GetMembers(self.peer))
         num = await DB_Manager(database='peers_roles.db',
                                query=f"SELECT * FROM '{str(self.peer)}' ", on_index=0).BD_COUNT()
-        t_m = list(map(to_tuple, [self.word_sep_l[1].splitlines(), self.word_sep_l[2].splitlines(),
+        t_m = list(map(Formatter.to_tuple, [self.word_sep_l[1].splitlines(), self.word_sep_l[2].splitlines(),
                                   self.word_sep_l[3].splitlines(), self.word_sep_l[4].splitlines()]))
         roles = {
             ((5, 3), 'create'): (f"INSERT OR IGNORE INTO '{str(self.peer)}' VALUES("
@@ -77,7 +77,7 @@ class manager(object):
                                  f"{t_m[3]})",
                                  "Создано", 1, self.mem['all_members']),
             ((2, 3), 'delete'): (f"DELETE FROM '{str(self.peer)}' where id IN ("
-                                 f"{to_tuple(self.word_sep_l[1].split(sep=' '))})",
+                                 f"{Formatter.to_tuple(self.word_sep_l[1].split(sep=' '))})",
                                  "Удалено", 1, self.mem['all_members']),
             ((1, 3), 'kill'): (f"DELETE FROM '{str(self.peer)}'",
                                "Данные уничтожены", 1, self.mem['admins']),
@@ -102,15 +102,15 @@ class manager(object):
         quotes = {
             ((2, 3), 'create'): (f"INSERT OR IGNORE INTO '{str(self.peer)}' VALUES("
                                  f"{int(max(num) + 1)},"
-                                 f"{to_tuple(self.word_sep_l[1].splitlines()).lower()})",
+                                 f"{Formatter.to_tuple(self.word_sep_l[1].splitlines()).lower()})",
                                  "Создано", 1, self.mem['all_members']),
             ((2, 3), 'delete'): (f"DELETE FROM '{str(self.peer)}' where id IN ("
-                                 f"{to_tuple(self.word_sep_l[1].split(sep=' '))})",
+                                 f"{Formatter.to_tuple(self.word_sep_l[1].split(sep=' '))})",
                                  "Удалено", 1, self.mem['all_members']),
             ((1, 3), 'kill'): (f"DELETE FROM '{str(self.peer)}'",
                                "Данные уничтожены", 1, self.mem['admins']),
             ((2, 4), 'update'): (f"UPDATE '{str(self.peer)}' SET "
-                                 f"quote = {to_tuple(self.word_sep_l[1].splitlines())}"
+                                 f"quote = {Formatter.to_tuple(self.word_sep_l[1].splitlines())}"
                                  f" where id = {self.word_sep[3]}",
                                  "Обновлено", 1, self.mem['all_members']),
         }

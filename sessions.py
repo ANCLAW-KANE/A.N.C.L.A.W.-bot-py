@@ -42,9 +42,9 @@ api_user = API(token=full_permission_user_token)
 #api_audio = vk_api.audio.VkAudio(vk_session_full)
 ###########################################################################################"""
 
-file_log = ['ERROR.log', 'Log.log']
 size_values = list("smxopqryzw")
 max_user_id = 2000000000
+              
 
 platforms = {
     1: 'мобильная версия сайта',

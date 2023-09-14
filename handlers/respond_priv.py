@@ -1,15 +1,13 @@
 from loguru import logger
 from sqlalchemy import select
-from vkbottle import Keyboard, KeyboardButtonColor, Callback
 from vkbottle.bot import Message, BotLabeler
 from CONFIG import IdGroupVK
+from keyboards import KeyboardRepository
 from database_module.Tables import Peers,peerDB,DBexec
 from hadlers_rules import PrefixPrevilegesRule
-from online_tools import RandomMember, getUserName, send
+from online_tools import RandomMember, getUserName
 from sessions import api_group, max_user_id
-from tools import json_config, data_msg, keyboard_params, DB_Manager
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import sessionmaker, scoped_session
+from tools import json_config, data_msg, DB_Manager
 
 ######################################################################################################
 class privileges(object):
@@ -19,6 +17,7 @@ class privileges(object):
         self.sender = sender
         self.peer = peer
         self.obj = obj
+        self.send_msg = data_msg()
         self.kb = kb
         self.cnvmgid = self.obj.conversation_message_id
         self.EVIL_GODS = json_config().read_key(dir="sys",key='EVIL_GODS')
@@ -30,7 +29,7 @@ class privileges(object):
             async with s.begin_nested():
                 E_G = (await s.execute(select(Peers).where(Peers.peer_id == self.peer))).fetchone()
             await s.close()"""
-        print("eg ",E_G)
+        #print("eg ",E_G)
         # print(self.sender)
         try:
             if self.sender not in self.EVIL_GODS and 0 < self.sender < max_user_id:
@@ -39,9 +38,9 @@ class privileges(object):
                 if E_G[3] == '1':
                     await api_group.messages.delete(peer_id=self.peer, conversation_message_ids=self.cnvmgid,
                                                     group_id=IdGroupVK, delete_for_all=1)
-                    data_msg.msg = f"{await getUserName(self.sender)} *Впечатан в землю*"
+                    self.send_msg.msg = f"{await getUserName(self.sender)} *Впечатан в землю*"
                 if E_G[4] == '1':
-                    data_msg.msg = f"{await RandomMember(self.peer)} насилует {await RandomMember(self.peer)}"
+                    self.send_msg.msg = f"{await RandomMember(self.peer)} насилует {await RandomMember(self.peer)}"
         except:
             pass
             #logger(f"\n_____________________\n{traceback.format_exc()}\n_____________________\n\n\n", "ERROR.log")
@@ -74,22 +73,10 @@ class privileges(object):
                 if key is not None: await key()
 
             elif self.txt == '* EVIL GOD *':
-                data_msg.msg = f'Доступно только админам бота\n______________________________\n'
+                self.send_msg.msg = f'Доступно только админам бота\n______________________________\n'
                 for z in list(privilege):
-                    data_msg.msg += f"🔥 {z} 🔥\n\n"
-                data_msg.keyboard = Keyboard(False, True) \
-                    .add(Callback("*присутствие злого бога*", payload={
-                    "GOD":
-                        keyboard_params(False, False, False, False, "*присутствие злого бога*").build()}),
-                         color=KeyboardButtonColor.NEGATIVE).row() \
-                    .add(Callback("*ваши головы подняты слишком высоко*", payload={
-                    "GOD":
-                        keyboard_params(False, False, False, False, "*ваши головы подняты слишком высоко*").build()}),
-                         color=KeyboardButtonColor.NEGATIVE).row() \
-                    .add(Callback("*адская похоть*", payload={
-                    "GOD":
-                        keyboard_params(False, False, False, False, "*адская похоть*").build()}),
-                         color=KeyboardButtonColor.NEGATIVE).get_json()
+                    self.send_msg.msg += f"🔥 {z} 🔥\n\n"
+                self.send_msg.keyboard = KeyboardRepository.PrivlegesKB()
 ######################################################################################################
 
 labeler = BotLabeler()
@@ -98,4 +85,3 @@ labeler = BotLabeler()
 async def command(msg: Message):
     logger.log("STATE","\n_________________________PRG_________________________")
     await privileges(txt=msg.text, sender=msg.from_id, peer=msg.peer_id, obj=msg).check()
-    await send(msg)

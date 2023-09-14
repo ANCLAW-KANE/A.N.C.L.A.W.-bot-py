@@ -1,61 +1,68 @@
-import random, math, re, traceback, sqlite3
 
+import random, math
 from loguru import logger
+from vkbottle import DocMessagesUploader
 from hadlers_rules import PrefixCommandRule
-from online_tools import get_tag, get_list_album, GetMembers, kick, send
-from tools import json_config, Debug, data_msg
+from online_tools import get_list_album, GetMembers,kick
+from tools import json_config,  data_msg,Patterns,Writer
 from managers import base_config, manager
-from sessions import global_catalog_command, file_log, api_user, vb
+from sessions import global_catalog_command, api_group, vb ,api_user
 from CONFIG import IdGroupVK
 from vkbottle.bot import Message , BotLabeler
+from vkbottle.exception_factory import VKAPIError
+from builders import ExtendParams, NameBuilder , String_parse
 
-
 ######################################################################################################
 ######################################################################################################
 ######################################################################################################
-class Respondent_command(object):
-    def __init__(self, TEXT, _FROM, PEER, OBJ):
-        self.TEXT = TEXT
-        self._FROM = _FROM
-        self.PEER = PEER
-        self.OBJ = OBJ
-        self.line = str(self.TEXT).splitlines()
-        self.sep = str(self.line[0]).split(sep=' ')
-        self.sep_query = str(self.line[0]).split(sep=' ', maxsplit=2)
-        self.len_sep = len(self.sep)
-        self.len_sep_query = len(self.sep_query)
-        self.reply = self.OBJ.reply_message
+class Respondent_command(ExtendParams,String_parse,NameBuilder):
+    def __init__(self, txt, fromid, peer, obj,):
+        self.fromid = fromid
+        self.peer = peer
+        self.obj = obj
+        ExtendParams.__init__(self)
+        String_parse.__init__(self,txt,obj)
+        NameBuilder.__init__(self,fromid,peer)
+        self.params()
+        self.parse('/')
+        #self.line = str(self.TEXT).splitlines()
+        #self.sep = str(self.line[0]).split(sep=' ')
+        #self.sep_query = str(self.line[0]).split(sep=' ', maxsplit=2)
+        #self.len_sep = len(self.sep)
+        #self.len_sep_query = len(self.sep_query)
+        #self.reply = fself.obj.reply_message
         self.OWNER_ALBUM_PHOTO = json_config().read_key('sys','OWNER_ALBUM_PHOTO')
         self.EVIL_GODS = json_config().read_key('sys','EVIL_GODS')
         self.Members = None
+        self.send_msg = data_msg()
 
     ######################################################################################################
 
     # def send(self,msg):
     #    msg = TEXT_SPLIT(msg,4000)
-    #    for z in msg: vk.messages.send(random_id=random.randint(0, 999999), message=z, peer_id=self.PEER)
+    #    for z in msg: vk.messages.send(random_id=random.randint(0, 999999), message=z, peer_id=self.peer)
     ######################################################################################################
     # def send_attachments(self,text,att):
-    #    vk.messages.send(random_id=random.randint(0, 999999), message=text, peer_id=self.PEER,attachment=att)
+    #    vk.messages.send(random_id=random.randint(0, 999999), message=text, peer_id=self.peer,attachment=att)
     #######################################/settings менеджер ######################################
     async def manager_f(self):
-        n = 5
-        word_sep = str(self.line[0]).split(sep=' ', maxsplit=n - 1)
-        # await self.OBJ.answer(f"До обработки { Debug(obj=self.line).obj_size()} {Debug(obj=word_sep).obj_size()} \n  {self.line}  {word_sep}")
+        #n = 5
+        #word_sep = str(self.line[0]).split(sep=' ', maxsplit=n - 1)
+        # await fself.obj.answer(f"До обработки { Debug(obj=self.line).obj_size()} {Debug(obj=word_sep).obj_size()} \n  {self.line}  {word_sep}")
         ################# наполнение ################
-        for add in range(n):
-            if len(self.line) < n: self.line.append('')
-            if len(word_sep) < n: word_sep.append('')
+        #for add in range(n):
+        #    if len(self.line) < n: self.line.append('')
+        #    if len(word_sep) < n: word_sep.append('')
         ######## зачистка от лишних пробелов ########
-        for z in word_sep:
-            z.replace(' ', '')
-        for z in range(len(self.line)):
-            self.line[z] = self.line[z].rstrip('\n ').lstrip()
-        #await self.OBJ.answer(f"{word_sep}\n{self.line}")
+        #for z in word_sep:
+        #    z.replace(' ', '')
+        #for z in range(len(self.line)):
+        #    self.line[z] = self.line[z].rstrip('\n ').lstrip()
+        #await fself.obj.answer(f"{word_sep}\n{self.line}")
         #############################################
-        # await self.OBJ.answer(f"После обработки { Debug(obj=self.line).obj_size()} {Debug(obj=word_sep).obj_size()} \n  {self.line}  {word_sep}")
-        mgr = manager(self.line, word_sep, self._FROM, self.PEER)
-        bcfg = base_config(word_sep, self._FROM, self.PEER)
+        # await fself.obj.answer(f"После обработки { Debug(obj=self.line).obj_size()} {Debug(obj=word_sep).obj_size()} \n  {self.line}  {word_sep}")
+        mgr = manager(self.string_all, self.fromid, self.peer)
+        bcfg = base_config(self.string_all, self.fromid, self.peer)
         arg2 = {
             'word': ['💻user ', mgr.word],
             'role': ['💻user ', mgr.role],
@@ -70,54 +77,36 @@ class Respondent_command(object):
             'json-params': ['⚙🔧bot-admin ', bcfg.info_param],
             'json-pe': ['⚙🔧bot-admin ', bcfg.add_info],
         }
-        if word_sep[1] in arg2: await arg2.get(word_sep[1])[1]()
-        elif word_sep[1] == '-c':
-            data_msg.msg = '⚙🔧bot-admin - доcтупно только разработчикам и администраторам бота \n ' \
+        if self.string_all[1] in arg2: await arg2.get(self.string_all[1])[1]()
+        elif self.string_all[1] == '-c':
+            self.send_msg.msg = '⚙🔧bot-admin - доcтупно только разработчикам и администраторам бота \n ' \
                            '💻user - доступно для всех\n\n'
-            for c in arg2: data_msg.msg += f"/settings {c} - {arg2.get(c)[0]}\n"
+            for c in arg2: self.send_msg.msg += f"/settings {c} - {arg2.get(c)[0]}\n"
 
     #######################################/i - инфокоманды ######################################
     async def info_module(self):
         inf = {
-            'idchat': [self.PEER, 'ID чата'],
-            'id': [self._FROM, 'Ваш ID'],
+            'idchat': [self.peer, 'ID чата'],
+            'id': [self.fromid, 'Ваш ID'],
         }
 
-        if self.len_sep >= 2:
-            if self.sep[1] in inf:
-                key = inf.get(self.sep[1])
-                data_msg.msg = f"{key[1]} - {key[0]}"
-            elif self.sep[1] == '-c':
+        if self.args_len is not None and self.args_len >= 1:
+            if self.list_args[0] in inf:
+                key = inf.get(self.list_args[1])
+                self.send_msg.msg = f"{key[1]} - {key[0]}"
+            elif self.list_args[0] == '-c':
                 mess = '/i:\n'
                 for z in list(inf): mess += f"ℹ️ - {z} - {inf.get(z)[1]}\n"
-                data_msg.msg = mess
-            if self.OBJ.reply_message is not None:
+                self.send_msg.msg = mess
+            if self.reply:
                 inf_reply = {
-                    'idm': [self.OBJ.reply_message.conversation_message_id, 'ID сообщения'],
-                    'id': [self.OBJ.reply_message.from_id, 'ID пользователя'],
+                    'idm': [self.reply.conversation_message_id, 'ID сообщения'],
+                    'id': [self.reply.from_id, 'ID пользователя'],
                 }
-                if self.sep[1] in inf_reply and self.OBJ.reply_message:
-                    key = inf_reply.get(self.sep[1])
-                    data_msg.msg = f"{key[1]} - {key[0]}"
+                if self.list_args[1] in inf_reply:
+                    key = inf_reply.get(self.list_args[0])
+                    self.send_msg.msg = f"{key[1]} - {key[0]}"
 
-
-
-    ############################################################################
-    async def debug(self):
-        print(self.sep[2])
-        # try:
-        dbg = Debug(pid=self.sep[2])
-        # except: dbg = Debug()
-        print(dbg.__dict__)
-        d = {
-            'mem': dbg.process_mem_size(),
-            'mem-map': dbg.process_mem_map(),
-        }
-        if self.len_sep >= 2:
-            if self.sep[1] in d: data_msg.msg = f"{d.get(self.sep[1])}\n"
-            elif self.sep[1] == '-c':
-                data_msg.msg = '/d:\n'
-                for z in list(d):  data_msg.msg += f"ℹ️ - {z}\n"
 
     #######################################/мем ######################################
     async def get_album_photos_mem(self):
@@ -133,109 +122,71 @@ class Respondent_command(object):
                                                    offset=random.randint(0, offset_max) * 50)
                 for photo in alb_ph.items:  photoList.append(str(photo.id))
                 if photoList is not None or not []:
-                    data_msg.msg = ''
-                    data_msg.attachment = f"photo{str(self.OWNER_ALBUM_PHOTO)}_{random.choice(photoList)}"
-        except Exception as e:
-            #logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n", "ERROR.log")
-            data_msg.msg = f'блядь я мем пробухал\n {e}'
-            data_msg.attachment = 'photo388145277_456240127'
+                    self.send_msg.attachment = f"photo{str(self.OWNER_ALBUM_PHOTO)}_{random.choice(photoList)}"
+        except:
+            self.send_msg.msg = f'Мем спизжен китайцами , повторите позже...'
+            self.send_msg.attachment = 'photo388145277_456240127'
 
     #######################################/кик ######################################
     async def manager_kick(self):
-        self.Members = (await GetMembers(self.PEER))
-        if self._FROM in self.Members['admins'] or self._FROM in self.EVIL_GODS:
+        self.Members = (await GetMembers(self.peer))
+        if self.fromid in self.Members['admins'] or self.fromid in self.EVIL_GODS:
             try:
-                if self.len_sep == 2:
-                    t = (await get_tag(self.sep[1]))
-                    if t['tag_id'] in self.sep[1]: await kick(chat_id=self.PEER - 2000000000, member_id=t['tag_id'])
-                else:
-                    if self.reply: await kick(chat_id=self.PEER - 2000000000, member_id=self.reply.from_id)
-            except Exception as e:
-                #await logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n",
-                #       "ERROR.log")
-                data_msg.msg = f"НЕЛЬЗЯ МУДИЛА \n{e}"
-        else:
-            data_msg.msg = "Ты не админ"
+                if self.args_len is not None and self.args_len >= 1:
+                    ids = Patterns.get_mentions(self.string_args)
+                    if ids['users'] != [] or ids["invert_ids_clubs"] != []:
+                        for i in ids['users'] + ids["invert_ids_clubs"]:
+                            await kick(chat=self.obj.chat_id, user=i['id'],member=i['id'])
+                elif self.reply:  await  kick(chat=self.obj.chat_id, user=self.reply.from_id,member=self.reply.from_id)    
+            except VKAPIError as e: self.send_msg.msg = f"НЕЛЬЗЯ МУДИЛА \n{e}"
+        else: self.send_msg.msg = "Ты не админ"
 
     #################################################################################################
     #######################################    cabal_module    ######################################
-    #######################################/invite ######################################
-    async def invite_user(self):
-        try:
-            if self.len_sep == 4 and self.sep[2] == re.findall("[0-9]{1,10}", self.sep[2])[0] and \
-                    self.sep[3] == re.findall("[0-9]{1,10}", self.sep[3])[0]:
-                await api_user.messages.add_chat_user(chat_id=self.sep[2], user_id=self.sep[3],
-                                                      visible_messages_count=1000)
-        except Exception as e:
-            #logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n", "ERROR.log")
-            data_msg.msg = f"НЕЛЬЗЯ МУДИЛА \n{e}"
-
-    #######################################очистка доков в группе ######################################
-    async def clear_docs(self):
-        #d = vk_user.docs.get(owner_id='-' + str(IdGroupVK))
-        #docs = []
-        #for item in d['items']: docs.append(str(item['id']))
-        #for doc_ in docs: await api_user.docs.delete(owner_id='-' + str(IdGroupVK), doc_id=doc_)
-        data_msg.msg = 'Удаление завершено'
-
     ####################################### E X T E R M I N A T U S ######################################
     async def KILL_ALL_MEMBERS(self):
-        self.Members = (await GetMembers(self.PEER))
-        for member in self.Members['members']: await kick(chat_id=self.PEER - 2000000000, member_id=member)
+        self.Members = (await GetMembers(self.peer))
+        for i in self.Members['members']: 
+            await api_group.messages.remove_chat_user(chat_id=self.obj.chat_id, user_id=i, member_id=i)
 
     async def catalog(self):
-        data_msg.msg = global_catalog_command
+        self.send_msg.msg = global_catalog_command
 
     async def download_log(self):
-        u = []
-        att = []
-        #for f in file_log:
-        #    try:
-        #        u += [upload.document(doc=f, title=f, group_id=IdGroupVK, to_wall=0)]
-        #    except:
-                #logger(f"\n________________________\n{traceback.format_exc()}\n________________________\n\n\n",
-                #       "ERROR.log")
-        #        pass
-        #for f in u: att.append(f"doc{str(f['doc']['owner_id'])}_{str(f['doc']['id'])}")
-        #vk.messages.send(random_id=0, peer_id=self.PEER, attachment=att)
-
-    async def sql_cmd(self):
-        if len(self.line) == 2 and self.len_sep == 3:
-            try:
-                BD = self.sep[2]
-                query = self.line[1]
-                base = sqlite3.connect(BD)
-                cur = base.cursor()
-                cur.execute(query)
-                print(base.total_changes, base.in_transaction)
-                if cur.__hash__() >= 1:
-                    base.commit()
-                    data_msg.msg = "Успешно"
-                else:
-                    data_msg.msg = "Изменений не  произошло"
-            except Exception as e:
-                data_msg.msg = f"Ошибка выполнения: {e}"
+        #path = f'./temps/logs-{self.peer}.zip'
+        path = await Writer.create_bytes_archive(Writer.create_list_zip('./logs'))
+        #await Writer.create_file_archive(path,Writer.create_list_zip('./logs'))
+        doc = DocMessagesUploader(vb.api)
+        self.send_msg.attachment = await doc.upload(f'logs-{self.peer}.zip',path , peer_id = self.peer)
 
     async def cabal_module(self):
-        if self.len_sep >= 2:
-            if self._FROM in self.EVIL_GODS:
-                cab_com = {
+        if self.args_len is not None and self.args_len >= 1 and self.fromid in self.EVIL_GODS:
+            cab_com = {
                     'kill_all_members=active': self.KILL_ALL_MEMBERS,
-                    'clear_docs_init': self.clear_docs,
-                    'invite': self.invite_user,
                     'catalog': self.catalog,
                     'log': self.download_log,
-                    'sql': self.sql_cmd,
                 }
-                if self.sep[1] in cab_com:
-                    key = cab_com.get(self.sep[1])
-                    if key is not None: await key()
-                elif self.sep[1] == '-c':
-                    data_msg.msg = '/cabal:\n'
-                    for z in list(cab_com):  data_msg.msg += f"ℹ️ - {z}\n"
+            if self.list_args[0] in cab_com:
+                key = cab_com.get(self.list_args[0])
+                if key is not None: await key()
+            elif self.list_args[0] == '-c':
+                self.send_msg.msg = '/cabal:\n'
+                for z in list(cab_com): self.send_msg.msg += f"ℹ️ - {z}\n"
 
-
-
+    async def check(self):
+        await self.construct()
+        command = {
+            'кик': self.manager_kick,
+            'мем': self.get_album_photos_mem,
+            'cabal': self.cabal_module,
+            'settings': self.manager_f,
+            'i': self.info_module,
+        }
+        if self.word_comm in command:
+            key = command.get(self.word_comm, None)
+            if key:
+                await key()
+                await self.send_msg.send(self.obj)
 
 ######################################################################################################
 ######################################################################################################
@@ -246,17 +197,4 @@ labeler = BotLabeler()
 @labeler.message(PrefixCommandRule(),blocking=False)
 async def command(msg: Message):
     logger.log("STATE","\n_________________________CMD_________________________")
-    cmd = str(msg.text).split(sep=' ')[0]
-    respond = Respondent_command(msg.text, msg.from_id, msg.peer_id, msg)
-    command = {
-            '/кик': respond.manager_kick,
-            '/мем': respond.get_album_photos_mem,
-            '/cabal': respond.cabal_module,
-            '/settings': respond.manager_f,
-            '/i': respond.info_module,
-            '/d': respond.debug,
-        }
-    if cmd in command:
-            key = command.get(cmd)
-            if key is not None: await key()
-    await send(msg)
+    await Respondent_command(msg.text, msg.from_id, msg.peer_id, msg).check()
