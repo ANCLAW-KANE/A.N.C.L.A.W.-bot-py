@@ -239,8 +239,6 @@ async def convert_img(inpt, output_name, convert_to):
 class json_config:
     def __init__(self,name=config_file_json):
         self.sys = {
-    def __init__(self,name=config_file_json):
-        self.sys = {
             'idGroupTelegram': 0,
             'PEER_CRUSH_EVENT': 0,
             'CAPTCHA_EVENT': 0,
@@ -248,15 +246,6 @@ class json_config:
             'users_list_warn': [],
             'EVIL_GODS': []
         }
-        self.name = name
-        self.db = pickledb.load(location=self.name,auto_dump=True, sig=True)
-
-    def create(self,dir="sys"):
-        if not os.path.isfile(self.name):
-            self.db.set(dir, self.sys)
-
-    def read_key(self,dir,key):
-        return self.db.get(dir)[key]
         self.name = name
         self.db = pickledb.load(location=self.name,auto_dump=True, sig=True)
 
@@ -279,14 +268,13 @@ class FSM(object):
         self.field = f"{self.obj}_{self.target}"
 
     def get_state(self,obj):
-    def get_state(self,obj):
         print(self.field)
         db = pickledb.load("states.db", False)
         try:
             return db[self.field]
         except KeyError:
             return obj.NULL.value
-            return obj.NULL.value
+
 
     def set_state(self, value):
         db = pickledb.load("states.db", False)
