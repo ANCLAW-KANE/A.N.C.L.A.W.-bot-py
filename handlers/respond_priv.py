@@ -21,6 +21,7 @@ class privileges(object):
         self.kb = kb
         self.cnvmgid = self.obj.conversation_message_id
         self.EVIL_GODS = json_config().read_key(dir="sys",key='EVIL_GODS')
+        self.EVIL_GODS = json_config().read_key(dir="sys",key='EVIL_GODS')
     ################## привелегия для удаления сообщений не админов(ультимативный мут) #################
     async def EVIL_GOD(self):
         E_G = await DBexec(peerDB,select(Peers).where(Peers.peer_id == self.peer)).dbselect("one")
