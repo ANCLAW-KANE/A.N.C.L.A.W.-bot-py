@@ -17,7 +17,7 @@ async def response_get_vk(method: str, params: dict, token: str, v: str):
 ######################################################################################################################
 
 ######################################################################################################################
-"""def send_to_specific_peer(msg, peerID, key=None):
+
 """def send_to_specific_peer(msg, peerID, key=None):
     msg = TEXT_SPLIT(msg, 4000)
     for z in msg: vk.messages.send(random_id=0, message=z, peer_id=peerID, keyboard=key)"""
