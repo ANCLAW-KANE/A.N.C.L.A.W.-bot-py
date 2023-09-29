@@ -1,6 +1,6 @@
 
 import random
-from database_module.Tables import PeerRepository
+from database_module.peer_repo import PeerRepository
 from online_tools import RandomMember
 
 class Roles():
@@ -8,7 +8,8 @@ class Roles():
         self.fromid = fromid
 
     async def role_func(self):# обработчик ролевых
-        if self.word_comm in await self.RepoRoles.check_roles(): 
+        roles = await self.RepoRoles.check_roles()
+        if roles and self.word_comm in roles: 
             key = await self.RepoRoles.get_roles(self.word_comm)
             self.send_msg.msg = f"{key[0]}   {self.sender}  {key[1]}  {self.name}  {key[2]}"
 
@@ -30,8 +31,7 @@ class Roles():
         self.send_msg.msg = f"{self.sender} {obj}"
 
     async def nickname(self):
-        if self.args_len:
-            if self.args_len >=2:
+        if self.args_len and self.args_len >=2:
                 nick = ' '.join(self.list_args[1:])
                 if len(nick) > 32:
                     self.send_msg.msg = "Ник не должен превышать 32 символов"

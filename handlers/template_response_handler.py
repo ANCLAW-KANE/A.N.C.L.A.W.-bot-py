@@ -1,7 +1,9 @@
 
 import random
 from vkbottle.bot import Message , BotLabeler
-from database_module.Tables import WordRepository , QuoteRepository ,PeerRepository
+from database_module.words_repo import WordRepository 
+from database_module.quote_repo import QuoteRepository
+from database_module.peer_repo import PeerRepository
 from hadlers_rules import MessageNotCommandRule,MsgParamQuoteRule,MsgParamWordsRule
 from vkbottle.dispatch.rules import AndRule
 

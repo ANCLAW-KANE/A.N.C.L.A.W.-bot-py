@@ -1,5 +1,6 @@
 from builders import ExtendParams,String_parse,NameBuilder
-from database_module.Tables import MarryRepository,RoleRepository
+from database_module.roles_repo import RoleRepository
+from database_module.marry_repo import MarryRepository
 from tools import data_msg,Patterns
 from handlers.who_modules.marry import FuncMarry
 from handlers.who_modules.roles import Roles
@@ -13,11 +14,11 @@ class RoleCommand(ExtendParams,String_parse,NameBuilder,Roles,FuncMarry):
         self.send_msg = data_msg()
         ExtendParams.__init__(self)
         String_parse.__init__(self,txt,obj)
+        self.params()
+        self.parse("!")
         NameBuilder.__init__(self,fromid,peer)
         Roles.__init__(self,fromid)
         FuncMarry.__init__(self,fromid)
-        self.params()
-        self.parse("!")
         self.RepoMarry = MarryRepository(self.peer,fromid)
         self.RepoRoles = RoleRepository(self.peer,fromid)
 

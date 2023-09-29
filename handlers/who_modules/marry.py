@@ -1,5 +1,5 @@
-from keyboards import KeyboardRepository
-from tools import keyboard_params
+from handlers.kb_handlers.func_handler_keyboard import KeyboardRepository
+from tools import Patterns, keyboard_params
 
 class FuncMarry():
     def __init__(self,fromid):
@@ -40,12 +40,14 @@ class FuncMarry():
         self.send_msg.msg = f"Вы отозвали брак с {self.name}!"
         self.send_msg.keyboard = None
     
-    async def marry_query_handler(self): 
-        if 'холост' in self.string_all: await self.clear_marry()
-        if self.id is not None:
-            await self.create_marry()
-            if 'развод' in self.string_all: await self.unmarry()
-
+    async def marry_query_handler(self):
+        if Patterns.pattern_bool(self.string_args,[Patterns.club_pattern]) == False: 
+            if 'холост' in self.string_all: 
+                await self.clear_marry()
+            if self.id is not None:
+                await self.create_marry()
+                if 'развод' in self.string_all: await self.unmarry()
+        else: self.send_msg.msg = "Нельзя подать брак сообществу, так как оно вам не ответит"
     ################################################################################################
     async def marry_list(self):
         string = None

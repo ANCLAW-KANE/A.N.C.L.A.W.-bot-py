@@ -1,24 +1,31 @@
 ﻿
+from datetime import datetime, timedelta
 from functools import reduce
 from itertools import chain
-import json, random, string, os, aiosqlite, pickledb,re,glob
+import json, random, string, os, pickledb,re,glob
 from PIL import Image
 from CONFIG import config_file_json
 from zipstream import AioZipStream
+from enums import Timestamp
+from loguru import logger
 ############################################################################
 
-
 class Patterns:
-    user_pattern = r"\[id(\d+)\|(@?\w+)\]"
-    club_pattern = r"\[club(\d+)\|(@?\w+)\]"
+    user_pattern =   r"\[id(\d+)\|(@?[^\]]+)\]"
+    club_pattern = r"\[club(\d+)\|(@?[^\]]+)\]"
+    chat_id_pattern = r"[0-9]{1,10}"
+    id_telegram_chat_pattern = r"-[0-9]{9,13}"
+    chance_pattern = r"100|[0-9]{1,2}"
 
     def pattern_bool(text,patterns,logic="and")-> bool:
         bools = []
         for pattern in patterns:
             matches = re.findall(pattern, text)
             if matches: bools.append(matches)
-        if logic == "and": return all(bools)
-        if logic == "or": return any(bools)
+        if len(bools) > 0:
+            if logic == "and": return all(bools)
+            if logic == "or": return any(bools)
+        else: return False
 
     def get_mentions(text):
         user_matches = re.findall(Patterns.user_pattern, text)
@@ -30,8 +37,7 @@ class Patterns:
             dict_clubs = [{'id': club[0], 'text': club[1]} for club in club_matches]
             dict_inverted_clubs = [{'id': -int(club[0]), 'text': club[1]} for club in club_matches]
             return {"users": dict_users,"clubs": dict_clubs,"invert_ids_clubs":dict_inverted_clubs}
-
-################################ TOOLS ##############################################
+############################################################################
 
 class Formatter():
     class DictClass:
@@ -57,6 +63,14 @@ class Formatter():
             """
             return f'{sep_spec}'.join('{}{}{}'.format(key, sep, val) for key, val in obj.items())
 
+    def empty_filter(obj, type_ = 'str-list'):
+        if type_ == 'str-list': return list(filter(lambda x: x != '' or x != '\n', obj.split(sep=' ')))
+        if type_ == 'str': return obj.replace("\n\n", "\n").replace("\n ", "\n")
+        if type_ == 'list': return list(filter(lambda x: x != '' or x != '\n', obj))
+        
+    def str_to_int_iter(obj):
+        return list(map(lambda x: int(x),Formatter.empty_filter(obj)))
+    
     def reformat_mention(obj):
         return str(obj).replace("@","[").replace("(","|").replace(")","]")
 
@@ -69,19 +83,23 @@ class Formatter():
     def text_split(obj, N):
         return [obj[i:i + N] for i in range(0, len(obj) - (len(obj) // N), N)] if obj != 0 else ''
     
+    def emojy_format(obj):
+        match obj:
+            case 1: obj = '✅'
+            case 0: obj = '⛔'
+            case _: obj = obj
+        return obj
+    
+    def separator_list(obj,sep):
+        return '\n'.join(
+            [f' {sep} '.join([str(word[ii]) for ii in range(len(word))]) for word in obj])
+
 ############################################################################
 
 class Writer:
 
     async def find_file(path):
         return glob.glob(path)
-
-    """async def create_archive(file_path: str, output_path: str):
-        with await zipfile.ZipFile(output_path, 'w') as zipf:
-            for root, _, files in await os.walk(file_path):
-                for file in files:
-                    file_path = await os.path.join(root, file)
-                    await zipf.write(file_path, os.path.relpath(file_path, output_path))"""
 
     def create_list_zip(dir):
         listzip = []
@@ -91,24 +109,20 @@ class Writer:
                 listzip.append({'file': fp})
         return listzip
     
-    async def create_bytes_archive(file_path):#, output_path: str
-        #async with asyncio.Lock():
+    async def create_bytes_archive(file_path):
             byte = []
             aiozip = AioZipStream(file_path, chunksize=32768).stream()
             async for z in aiozip: byte.append(z)
             return b"".join(byte)
 
-    async def create_file_archive(zipname,file_path):#, output_path: str      
-        #async with asyncio.Lock():
+    async def create_file_archive(zipname,file_path):
             aiozip = AioZipStream(file_path, chunksize=32768)
             with open(zipname, mode='wb') as z:
                 async for chunk in aiozip.stream():
                     z.write(chunk)
 
-
     def write_file(name, getfile):
         with open(name, 'bw') as f: f.write(getfile)
-
 
     def read_file_json(name):
         try:
@@ -119,121 +133,6 @@ class Writer:
 
     def write_file_json(name, data):
         with open(name, "w") as f:  json.dump(data, f)
-
-
-
-############################################################################
-def gen_r_s(l):
-    letters = string.ascii_lowercase
-    rand_string = ''.join(random.choice(letters) for i in range(l))
-    print("Random string of length ", l, " is: ", rand_string)
-
-
-############################################################################
-class DB_Manager(object):
-
-    def __init__(self, database, query, sep=None, on_index=None, type_=None,
-                 peer=None, m1=None, m2=None, update=None, arg=None):
-        self.database = database
-        self.connect = None
-        self.cursor = None
-        self.query = query
-        self.sep = sep
-        self.on_index = on_index
-        self.type_ = type_
-        self.peer = peer
-        self.m1 = m1
-        self.m2 = m2
-        self.update = update
-        self.arg = arg
-
-    async def __call__(self, database=None, query=None, sep=None, on_index=None, type_=None,
-                       peer=None, m1=None, m2=None, update=None, arg=None):
-        new = self.__new__(self.__class__)
-        new.database = self.database if database is None else database
-        new.query = self.query if query is None else query
-        new.sep = self.sep if sep is None else sep
-        new.on_index = self.on_index if on_index is None else on_index
-        new.type_ = self.type_ if type_ is None else type_
-        new.peer = self.peer if peer is None else peer
-        new.m1 = self.m1 if m1 is None else m1
-        new.m2 = self.m2 if m2 is None else m2
-        new.update = self.update if update is None else update
-        new.arg = self.arg if arg is None else arg
-        #print(new, new.__dict__)
-        return new
-
-    async def __connect__(self):
-        self.connect = await aiosqlite.connect(self.database)
-        self.cursor = await self.connect.cursor()
-
-    async def key(self):  # для переключения 0 1 значений в БД
-        await self.__connect__()
-        str_E_G = list(await (await self.cursor.execute(self.query)).fetchone())
-        data_msg.msg = "ERROR"
-        if str_E_G[self.on_index] == self.type_('0'):
-            str_E_G = self.type_('1')
-            data_msg.msg = self.m1
-        elif str_E_G[self.on_index] == self.type_('1'):
-            str_E_G = self.type_('0')
-            data_msg.msg = self.m2
-        await self.cursor.execute(self.update, (self.type_(str_E_G), self.arg))
-        await self.connect.commit()
-        await self.connect.close()
-
-    async def exec(self, access=None, changes=1):
-        await self.__connect__()
-        await self.cursor.execute(self.query)
-        if self.connect.total_changes >= changes:
-            if self.peer in access or access is None:
-                await self.connect.commit()
-                data_msg.msg = self.m1
-            else:
-                data_msg.msg = "Нет прав"
-        else:
-            data_msg.msg = "Не выполнено, проверьте аргументы. (Или данная запись уже есть)"
-        await self.connect.close()
-
-    async def BD_LIST(self):
-        await self.__connect__()
-        ss = ''
-        s = ''
-        words = await (await self.cursor.execute(self.query)).fetchall()
-        await self.connect.close()
-        for word in words:
-            for ii in range(len(word)):
-                if ii == 0:
-                    s += f"{word[ii]}"
-                else:
-                    s += f" {self.sep} {word[ii]}"
-            ss += f"{s}\n"
-            s = ''
-        if ss == '': ss = 'Ничего нет'
-        return ss
-
-    async def BD_COUNT(self):
-        num = []
-        await self.__connect__()
-        count = await (await self.cursor.execute(self.query)).fetchall()
-        await self.connect.close()
-        for n in count: num.append(n[self.on_index])
-        if not num: num.append(0)
-        return num
-
-    async def get_one_col_list(self):
-        l = []
-        await self.__connect__()
-        edit = await (await self.cursor.execute(self.query)).fetchall()
-        await self.connect.close()
-        for z in edit: l.append(z[0])
-        return l
-
-
-############################################################################
-async def convert_img(inpt, output_name, convert_to):
-    ipng = await Image.open(inpt).convert()
-    await ipng.save(output_name, convert_to)
-
 
 ######################################################################################################################
 class json_config:
@@ -248,13 +147,29 @@ class json_config:
         }
         self.name = name
         self.db = pickledb.load(location=self.name,auto_dump=True, sig=True)
-
+    
     def create(self,dir="sys"):
         if not os.path.isfile(self.name):
             self.db.set(dir, self.sys)
 
     def read_key(self,dir,key):
         return self.db.get(dir)[key]
+    
+    def input_key(self,key,value,_type,dir='sys'):
+        self.db.db[dir][key] = _type(value)
+        self.db.dump()
+    
+    def extend_key_list(self,key,value,_type,dir='sys'):
+        self.db.db[dir][key].append(_type(value))
+        self.db.dump()
+    
+    def delete_key_list(self,key,value,_type,dir='sys'):
+        self.db.db[dir][key].remove(_type(value))
+        self.db.dump()
+     
+    def get_key_list(self,dir='sys'):
+        return list(self.db.db[dir].keys())
+
 
 
 ######################################################################################################################
@@ -302,8 +217,7 @@ class data_msg:
         self.keyboard = keyboard
 
     def check_empty(self) -> bool:
-        return self.msg is not None or self.attachment is not None \
-            or self._reply is not None or self.keyboard is not None
+        return (self.msg and str(self.msg).find('None') == -1) or self.attachment or self._reply or self.keyboard 
     
     async def send(self,obj):
         if self.check_empty():
@@ -322,7 +236,8 @@ class data_msg:
                 dont_parse_links  = None,
                 disable_mentions  = None,
                 intent  = None,
-                subscribe_id  = None)
+                subscribe_id  = None
+            )
 
 
 ############################################################################
@@ -341,8 +256,89 @@ class keyboard_params:
         self.conv_msg_id_old = conv_msg_id_old
         self.pay_dir = pay_dir
 
-    def build(self): return {"sender":    self.user_sender, 
-                             "recipient": self.user_recipient, 
-                             "msg_old": self.conv_msg_id_old,
-                             "dir":     self.pay_dir}
+    def build(self): 
+        return {
+            "sender": self.user_sender, 
+            "recipient": self.user_recipient, 
+            "msg_old": self.conv_msg_id_old,
+            "dir": self.pay_dir
+                }
  
+
+ ############################################################################
+########################### Functions ######################################
+def check_index(obj,index):
+    try: return obj[index]
+    except: return None
+
+def remove_mention(text):
+    txt = text.split()
+    return [element for element in txt if Patterns.pattern_bool(element,[Patterns.user_pattern, Patterns.club_pattern]) == False]
+
+def parse_time(time):
+    try:
+        now = datetime.now().replace(second=0, microsecond=0)
+        data = remove_mention(time)
+        years = now.year
+        months = now.month
+        days = 0
+        hours = 0
+        minutes = 0
+        for i in range(0, len(data), 2):
+            value = int(data[i])
+            unit = data[i + 1]
+            if unit in Timestamp.year.value: 
+                if value < 1 or value > 9999 : return 'Недопустимый год.'
+                years = now.year + value 
+            if unit in Timestamp.month.value: 
+                if value < 1 or value > 12 : return'Недопустимый месяц.'
+                months = now.month + value 
+            if unit in Timestamp.day.value: 
+                if value < 1 or value > 31 : return 'Недопустимый день.'
+                days = value
+            if unit in Timestamp.hour.value:
+                if value < 0 or value > 23 : return 'Недопустимый час.'
+                hours = value 
+            if unit in Timestamp.minute.value:
+                if value < 0 or value > 59 : return 'Недопустимое количество минут.'
+                minutes = value 
+
+        if years == now.year and months == now.month and days == 0 and hours == 0 and minutes == 0: return 'Вы не указали время или оно менее минуты.'
+        else:
+            if months > 12:
+                quotient, remainder = divmod(months, 12)
+                years += quotient
+                months = remainder
+            calc = datetime(years, months, now.day, now.hour, now.minute) + timedelta(days=days, hours=hours, minutes=minutes)
+            return {'calc_time': calc ,'current_time': now}#.strftime('%Y-%m-%d %H:%M')
+    except Exception as e: 
+        logger.error(e)
+        return 'Неверный формат времени'
+
+
+def unpack_keys(obj,emj):
+    result = ''
+    for key in obj.keys():
+        if isinstance(key, tuple):
+            string_tuple = ' | '.join(map(str, key))
+            result += f"{emj} - < {string_tuple} >\n"
+        else:
+            result += f"{emj} - {key}\n"
+    return result
+            
+def check_dict_key(dictonary,keyword):
+    matching_keys = [key for key in dictonary.keys() if keyword in key]
+    if matching_keys:
+        value = dictonary[matching_keys[0]]
+        return value
+    else: return None
+
+def gen_r_s(l):
+    letters = string.ascii_lowercase
+    rand_string = ''.join(random.choice(letters) for _ in range(l))
+    print("Random string of length ", l, " is: ", rand_string)
+
+async def convert_img(inpt, output_name, convert_to):
+    ipng = await Image.open(inpt).convert()
+    await ipng.save(output_name, convert_to)
+

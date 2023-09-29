@@ -1,4 +1,4 @@
-__pycache__/
+__pycache__
 .idea/
 .vscode/
 MAIN.py.lprof
@@ -12,6 +12,6 @@ p.py
 database_module/__pycache__/
 peers.db
 .gitignore
-logs/error_14-09-2023, 16 50 32.log
-logs/log.log
-handlers\who_modules\__pycache__
+logs/
+/images_editor/images
+handlers/who_modules/__pycache__/

@@ -3,8 +3,9 @@ from sqlalchemy import select
 from vkbottle.bot import Message
 from vkbottle.dispatch.rules import ABCRule,OrRule
 from database_module.Tables import Peers,peerDB,DBexec
+from database_module.peer_repo import PeerRepository
 
-prefixs = ['/','!','*']
+prefixs = ['/','!','$']
 
 class MessageNotEmpty(OrRule[Message]):
     async def check(self, m:Message)  -> bool:
@@ -49,5 +50,9 @@ class MsgParamQuoteRule(ABCRule[Message]):
             q = await DBexec(peerDB,select(Peers.quotes)).dbselect("one")
             return q == 1
     
-
+class MuteRule(ABCRule[Message]):
+    async def check(self, m:Message)  -> bool:
+        logger.log("STATE","\n___MUTERULE___")
+        repo = PeerRepository(m.peer_id)
+        return await repo.check_id_mute(m.from_id)
     

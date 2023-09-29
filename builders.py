@@ -1,16 +1,19 @@
 from online_tools import getUserName
 from tools import Patterns
 from sessions import max_user_id
-from database_module.Tables import PeerRepository
+from database_module.peer_repo import PeerRepository
 
 class ExtendParams:
     def params(self):
         self.sender = ""        # имя отправителя
+        self.Members = None     # список участников чата
         self.reply = None       # ответ на сообщение
         self.kb_l = None        # создание параметров клавиатуры 
         self.tag = None         # временнная переменная в NameBuilder
         self.id = None          # id из тега
         self.name = None        # имя из тега
+        self.lines = None       # текст на строки
+        self.len_lines = None   # количество строк
         self.string_all = None  # разбиение строки
         self.list_args = None   # получение списка аргументов
         self.string_args = ' '  # строка из аргументов
@@ -25,6 +28,11 @@ class NameBuilder:
         self.fromid = fromid
         self.peer = peer
 
+    def _debug_(self):
+        for attribute_name in dir(self):
+            attribute_value = getattr(self, attribute_name)
+            print(attribute_name, attribute_value)
+    
     async def construct(self):
         await self._parse_tags()
         await self._sender_name()
@@ -56,9 +64,8 @@ class NameBuilder:
             else: self.name = f"@{prfx}{self.id}({await getUserName(self.id,group)})"
 
     async def nickname_check(self,id):
-        nick = await PeerRepository(self.peer,id).check_nick()
-        return nick
-
+        return await PeerRepository(self.peer,id).check_nick()
+    
     async def _parse_tags(self):
         if self.reply is None and self.find_tag and (self.find_tag['users'] or self.find_tag['clubs']):
                     if self.find_tag['users'] != []: 
@@ -78,6 +85,7 @@ class NameBuilder:
                                     if await self.nickname_check(self.id)\
                                     else f"@{prfx}{self.id}({await getUserName(self.id,group)})" # тег с простым упоминанием
         else: await self._get_reply()
+        #self._debug_()
 
 ######################################################################################################
 class String_parse:
@@ -85,17 +93,34 @@ class String_parse:
         self.msg = msg
         self.obj = obj
 
+    def clear_symbols(self):
+        ######## зачистка от лишних пробелов и переносов строк ########
+        self.string_all = list(map(lambda x: x.replace(' ', '').replace('\n', '').rstrip('\n ').lstrip(), self.string_all))
+        self.string_all = list(filter(lambda x: x != '' or x != '\n', self.string_all))
+        self.lines = list(map(lambda x: x.rstrip('\n ').lstrip(), self.lines))
+
     def parse(self,prefix):
         if self.msg is not None:
-            self.string_all = str(self.msg).lower().split(sep=' ') 
+            self.lines = str(self.msg).splitlines()
+            self.len_lines = len(self.lines)
+            self.string_all = str(self.lines[0]).split(sep=' ') 
             self.str_len = len(self.string_all)
-            if self.str_len > 1: 
+            if prefix != '': self.word_comm = self.string_all[0].lower().replace(prefix, '')
+            self.clear_symbols()
+            if self.str_len > 1:
+                if self.word_comm == '': # на случай если команда в первом индексе
+                    self.word_comm = self.string_all[1].lower()
+                    self.string_all.remove(self.string_all[1]) # удаляем команду и выравниваем аргументы
                 self.list_args = self.string_all[1:]  # аргументы
                 self.args_len = len(self.list_args) 
                 self.string_args = ' '.join(self.list_args)
-                self.find_tag = Patterns.get_mentions(self.msg) # упоминания
-                print(self.find_tag)
-            self.word_comm = self.string_all[0].replace(prefix, '')     
+                self.find_tag = Patterns.get_mentions(self.msg) # упоминания  
+            self.clear_symbols()
+            
         if self.obj is not None:
             self.reply = self.obj.reply_message
             self.conv_id = self.obj.conversation_message_id
+
+
+
+            

@@ -1,11 +1,11 @@
 import re, random
-import re, random
 from datetime import datetime
 from sessions import api_group, size_values, platforms, max_user_id,vb
 from CONFIG import IdGroupVK, full_permission_user_token
-from tools import data_msg, json_config, Formatter
+from tools import json_config, Formatter
 from vkbottle.http import AiohttpClient
-from vkbottle.tools import DocMessagesUploader,PhotoMessageUploader,VoiceMessageUploader,VideoUploader
+from database_module.peer_repo import PeerRepository
+
 
 async def response_get_vk(method: str, params: dict, token: str, v: str):
     url = f"https://api.vk.com/method/{method}?{Formatter.DictClass.dict_to_str(params, '=','&')}&access_token={token}&v={v}"
@@ -23,44 +23,44 @@ async def response_get_vk(method: str, params: dict, token: str, v: str):
     for z in msg: vk.messages.send(random_id=0, message=z, peer_id=peerID, keyboard=key)"""
 
 async def kick(chat,user=None,member=None):
-    try:
-        await api_group.messages.remove_chat_user(chat_id=chat, user_id=user)
-    except:  
-        await api_group.messages.remove_chat_user(chat_id=chat, member_id=member)
-######################################################################################################################
-
-
-    
+    #try:
+        await api_group.messages.remove_chat_user(chat_id=chat, user_id=user, member_id=member)
+    #except:  
+        #await api_group.messages.remove_chat_user(chat_id=chat, member_id=member)
 
 ######################################################################################################################
-async def getUserName(obj,group=False):  # извлечение имени и фамилии
+async def getUserName(obj,group=False,peer=None,return_mentions = False):  # извлечение имени и фамилии
     try:
         userId = int(obj)
         if 0 < userId < max_user_id:
             if group==False:
-                username = await api_group.users.get(user_id=userId)
-                return str(username[0].first_name + " " + username[0].last_name)
+                peerRepo = PeerRepository(peer=peer,fromid=obj)
+                nick = await peerRepo.check_nick()
+                if nick: username = nick[0]
+                else: 
+                    user = await api_group.users.get(user_id=userId)
+                    username = str(user[0].first_name + " " + user[0].last_name)
+                return username if return_mentions == False else f'@id{userId}({username})'
             else:
                 groupname = await api_group.groups.get_by_id(group_ids=userId,fields='name')
-                return groupname[0].name
+                return groupname[0].name if return_mentions == False else f'@club{userId}({groupname[0].name})'
     except:
         pass
 
+async def get_leave_users(peer,):
+    users = await api_group.messages.get_conversation_members(peer_id=peer, group_id=IdGroupVK)
+    items = [user.member_id for user in users.items]
+    profiles = [user.id for user in users.profiles]
+    return list(set(profiles) - set(items))
 
 ######################################################################################################################
 async def GetMembers(peer):
     members = await api_group.messages.get_conversation_members(peer_id=peer, group_id=IdGroupVK)
-    membList = []
-    membListNotAdmin = []
-    membListAdmin = []
-    memBots = []
-    for mbs in members.items:
-        member = mbs.member_id
-        admin = mbs.is_admin
-        owner = mbs.is_owner
-        membList.append(member) if member > 0 else memBots.append(member)
-        membListAdmin.append(member) if (admin or owner) else membListNotAdmin.append(member)
-    # print({"all_members":membList, "members":membListNotAdmin, "admins":membListAdmin, "bots":memBots})
+    membList = [mbs.member_id for mbs in members.items if mbs.member_id > 0]
+    membListAdmin= [mbs.member_id for mbs in members.items if (mbs.is_admin or mbs.is_owner)]
+    membListNotAdmin = [mbs.member_id for mbs in members.items if not (mbs.is_admin or mbs.is_owner)]
+    memBots = [mbs.member_id for mbs in members.items if mbs.member_id < 0]
+    #print({"all_members":membList, "members":membListNotAdmin, "admins":membListAdmin, "bots":memBots})
     return {"all_members":membList, "members":membListNotAdmin, "admins":membListAdmin, "bots":memBots}
 
 
@@ -95,18 +95,6 @@ async def RandomMember(peer):
     username = await api_group.users.get(user_ids=userID)
     user = str(username[0].first_name + " " + username[0].last_name)
     return str('@id' + str(userID) + '(' + user + ')')
-
-
-######################################################################################################################
-"""async def get_tag(obj):
-    try:
-        tag_sep = obj.split(sep='|')
-        tag_id = re.findall(tag_sep[0].replace('[id', ''), obj)
-        tag_name = tag_sep[1].replace(']', '')
-        print({'tag_id':tag_id[0],'tag_name': tag_name})
-        return {'tag_id':tag_id[0],'tag_name': tag_name}
-    except:
-        return [None, None, None]"""
 
 
 ######################################################################################################################
