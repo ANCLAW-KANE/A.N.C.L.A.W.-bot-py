@@ -1,2 +1,1 @@
-cd "C:\k\project\PycharmProjects\bot2"
-python MAIN.py
+%~dp0vkbot\Scripts\python.exe %~dp0MAIN.py

@@ -44,11 +44,11 @@ class Generator:
             return ' '.join(new_list)
     
     async def _get_random_file(self): 
-        f = os.listdir(f"{path_img}{self.obj.chat.id}/")
-        if f: return f"{path_img}{self.obj.chat.id}/{random.choice(f)}"
+        f = os.listdir(f"{path_img}{self.obj}/")
+        if f: return f"{path_img}{self.obj}/{random.choice(f)}"
     
     async def generate_demotivator(self):
         f = await self._get_random_file()
         if f: 
-            g = Demotivator_generator(self.obj.chat.id,f,await self.generate_text(size=400,state=2))
+            g = Demotivator_generator(self.obj,f,await self.generate_text(size=400,state=2))
             return await g.gen()

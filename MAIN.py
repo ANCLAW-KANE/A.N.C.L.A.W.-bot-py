@@ -13,7 +13,6 @@ from database_module.Tables import peerDB,BasePeer
 from database_module.marry_repo import MarryRepository
 from exceptions import handle_vk_error,handle_exception_error
 from pathlib import Path
-from time import sleep
 ################################################################################################
 
 # try:
