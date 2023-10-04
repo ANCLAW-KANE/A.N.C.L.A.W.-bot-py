@@ -1,13 +1,14 @@
 import os
 import random
 import markovify
+import textwrap
 from images_editor.demotivator import Demotivator_generator
 from CONFIG import path_img
 MAX_MSG_LENGTH = 4096
 
 """tag_pattern = re.compile(r"\[(id\d+?)\|.+?\]")
 def clean_text(text: str) -> str:
-    text = tag_pattern.sub(r"@\1", text) # Преобразование [id1|@durov] в @id1
+    text = tag_pattern.sub(r"@\1", text) # Преобразование [id1|@d] в @id1
     return text.lower()"""
 
 class Generator:
@@ -25,9 +26,11 @@ class Generator:
         ) or random.choice(self.msg)
     
     async def generate_long_text(self) -> str:
-        r = random.sample(self.msg, random.randint(15, 100))
         text_models = []
         for _ in range(4): 
+            try:
+                r = random.sample(self.msg, random.randint(15, 100))
+            except: return "Мало данных для генерации "
             text_model_long = markovify.Text(input_text="\n".join(r), well_formed=False)
             text_models.append(text_model_long)
         res = markovify.combine(text_models, [1, 2, 1, 2])
@@ -41,7 +44,8 @@ class Generator:
         if not new_list:
             return ' '.join(random.sample(self.msg, random.randint(6 , 10)))
         else:
-            return ' '.join(new_list)
+            long = ' '.join(new_list)
+            return long if len(long) < MAX_MSG_LENGTH else textwrap.shorten(long, width=MAX_MSG_LENGTH-4, placeholder="")
     
     async def _get_random_file(self): 
         f = os.listdir(f"{path_img}{self.obj}/")
@@ -49,6 +53,6 @@ class Generator:
     
     async def generate_demotivator(self):
         f = await self._get_random_file()
-        if f: 
+        if f:
             g = Demotivator_generator(self.obj,f,await self.generate_text(size=400,state=2))
             return await g.gen()

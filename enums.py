@@ -30,7 +30,7 @@ class Commands(Enum):
     cabal = 'cabal'
     settings = ('settings','set','s','настройки')
     info = ('i','info')
-
+    gen = ('g','г','gen','ген')
     mute = ('мут','mute','заткнуть','заткнись')
     ban = ('кик','kick','ban','бан')
     deleted = ('собак', 'удаленные')
@@ -43,3 +43,18 @@ class Timestamp(Enum):
     month = ('месяц','месяца','месяцев','мес')
     year = ('год','года','лет','л')
     
+
+size_values = list("smxopqryzw")
+max_user_id = 2000000000
+              
+
+platforms = {
+    1: 'мобильная версия сайта',
+    2: 'iPhone',
+    3: 'iPad',
+    4: 'Android',
+    5: 'Windows Phone',
+    6: 'Windows 10',
+    7: 'полная версия сайта'
+}
+

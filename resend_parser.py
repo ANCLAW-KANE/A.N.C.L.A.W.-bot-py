@@ -1,6 +1,6 @@
 from requests import get
 from urllib import request
-from online_tools import get_max_photo, getUserName, get_conversation_message_ids, GET_CHAT_TITLE
+from vk_modules.online_tools import get_max_photo, getUserName, get_conversation_message_ids, GET_CHAT_TITLE
 from telebot.types import InputMediaPhoto, InputMediaAudio
 from resend_function import SendTG
 

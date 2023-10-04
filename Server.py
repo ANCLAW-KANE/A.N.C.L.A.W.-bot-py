@@ -4,9 +4,9 @@ from resend_function import SendTGtoVK
 from resend_parser import parse_resend
 from telebot.types import InputMediaDocument
 from vk_api.bot_longpoll import VkBotEventType
-from online_tools import get_online
+from vk_modules.online_tools import get_online
 from tools import json_config, logger
-from sessions import vk, bot, longpoll_full, file_log
+from sessions_vk import vk, bot, longpoll_full, file_log
 
 
 ############################ отправка в чат телеги из вк ##################################
