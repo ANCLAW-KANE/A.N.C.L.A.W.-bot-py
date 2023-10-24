@@ -8,8 +8,19 @@ class PeerRepository:
         self.fromid = fromid
 
     async def create_settings_peer(self):
-        await DBexec(peerDB,insert(Peers).values(peer_id=self.peer, count_period=0, e_g_mute = 0, e_g_head = 0,
-            e_g_ex = 0, resend = 1, poligam_marry = 1, quotes = 1 , words = 1).prefix_with('OR IGNORE')).dbedit()
+        await DBexec(peerDB,insert(Peers).values(
+                peer_id=self.peer, 
+                e_g_mute = 0, 
+                e_g_head = 0,
+                e_g_ex = 0, 
+                resend = 1, 
+                poligam_marry = 1, 
+                words = 1,
+                g_txt = 0,
+                g_dem = 0,
+                g_ldem = 0,
+                g_sticker = 0
+            ).prefix_with('OR IGNORE')).dbedit()
         
     async def check_nick(self):
         return await DBexec(peerDB,select(Nicknames.nickname).where(
@@ -26,8 +37,8 @@ class PeerRepository:
             await DBexec(peerDB,insert(Nicknames).values(peer_id = self.peer, user_id = self.fromid, 
                     nickname = nick).prefix_with('OR IGNORE')).dbedit()
             
-    async def get_count(self):
-        return await DBexec(peerDB,select(Peers.count_period).where(Peers.peer_id == self.peer)).dbselect("one")
+    #async def get_count(self):
+    #    return await DBexec(peerDB,select(Peers.&&&&&).where(Peers.peer_id == self.peer)).dbselect("one")
     
     async def toggle_marry(self):
         return await DBmanager(peerDB, Peers, Peers.poligam_marry, Peers.peer_id == self.peer, ['Полигамный брак разрешен',
@@ -36,29 +47,36 @@ class PeerRepository:
     async def toggle_word(self):
         return await DBmanager(peerDB, Peers, Peers.words, Peers.peer_id == self.peer, ['Шаблоны (слова) включены',
                                                                             'Шаблоны (цитаты) выключены']).key("words")
-    
-    async def toggle_quote(self):
-        return await DBmanager(peerDB, Peers, Peers.quotes, Peers.peer_id == self.peer, ['Шаблоны (слова) включены',
-                                                                            'Шаблоны (цитаты) выключены']).key("quotes")
 
     async def get_params_peer(self):
         fetch = await DBexec(peerDB,select(Peers).where(Peers.peer_id == self.peer)).dbselect()
         params = fetch[0][0] if fetch else None
         if params: return{
             "peer_id": params.peer_id,
-            "count_period": params.count_period,
             "e_g_mute": params.e_g_mute,
             "e_g_head": params.e_g_head,
             "e_g_ex": params.e_g_ex,
             "resend": params.resend,
             "poligam_marry": params.poligam_marry,
-            "quotes": params.quotes,
-            "words": params.words
+            "words": params.words,
+            "g_txt": params.g_txt,
+            "g_dem": params.g_dem,
+            "g_ldem": params.g_ldem,
+            "g_stck": params.g_sticker
         }
         else:return None
 
-    async def toggle_count(self,count):################парвить
-        await DBexec(peerDB,update(Peers).where(Peers.peer_id == self.peer).values(count_period=count)).dbedit()
+    async def g_txt(self,count):
+        await DBexec(peerDB,update(Peers).where(Peers.peer_id == self.peer).values(g_txt=count)).dbedit()
+
+    async def g_dem(self,count):
+        await DBexec(peerDB,update(Peers).where(Peers.peer_id == self.peer).values(g_dem=count)).dbedit()
+
+    async def g_ldem(self,count):
+        await DBexec(peerDB,update(Peers).where(Peers.peer_id == self.peer).values(g_ldem=count)).dbedit()
+
+    async def g_stck(self,count):
+        await DBexec(peerDB,update(Peers).where(Peers.peer_id == self.peer).values(g_sticker=count)).dbedit()
 
     async def check_id_mute(self,user):
         date_mute = await DBexec(peerDB,select(Mutes.data_end).where(

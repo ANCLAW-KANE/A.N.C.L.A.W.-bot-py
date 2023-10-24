@@ -26,12 +26,19 @@ class Generate:
         photo = await g.generate_demotivator()
         upload = PhotoMessageUploader(vb.api)
         self.send_msg.attachment = await upload.upload(file_source=photo,peer_id = self.peer)
+
+    async def dlgen(self):
+        g = await self._data()
+        photo = await g.generate_big_demotivator()
+        upload = PhotoMessageUploader(vb.api)
+        self.send_msg.attachment = await upload.upload(file_source=photo,peer_id = self.peer)
         
     async def check_g(self):
         gens = {
             None:self.gen,
             'l':self.lgen,
-            'd':self.dgen
+            'd':self.dgen,
+            'dl':self.dlgen
         }
         key = gens.get(check_index(self.list_args,0))
         if key: await key()

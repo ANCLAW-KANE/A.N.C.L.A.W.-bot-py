@@ -44,7 +44,6 @@ class Respondent_command(ExtendParams,String_parse,NameBuilder,Administration,Fu
                 Commands.settings_chat.value: self.show_settings,
                 Commands.settings_marry.value: self.marry_toggle,
                 Commands.settings_words.value: self.toggle_word,
-                Commands.settings_quotes.value: self.toggle_quote,
             }
         if self.args_len and self.args_len >= 1:
             key = check_dict_key(arg2, self.list_args[0])

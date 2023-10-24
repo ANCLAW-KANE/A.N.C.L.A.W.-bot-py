@@ -6,7 +6,7 @@ from database_module.Tables import create_peer_table
 from database_module.markov_repo import MarkovRepository
 from database_module.peer_repo import PeerRepository
 from CONFIG import path_img
-
+from tg_modules.handlers.keyboard  import commands
 
 class AddHistoryMiddleware(BaseMiddleware):
     def __init__(self) -> None:

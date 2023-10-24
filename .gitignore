@@ -15,3 +15,10 @@ peers.db
 logs/
 /images_editor/images
 handlers/who_modules/__pycache__/
+services/1.jpg
+ddm.txt
+.gitignore
+ddm1.txt
+temps/
+.gitignore
+profile_results.prof

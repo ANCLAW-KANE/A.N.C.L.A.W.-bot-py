@@ -1,4 +1,4 @@
-from database_module.quote_repo import QuoteRepository
+
 from database_module.peer_repo import PeerRepository
 from database_module.roles_repo import RoleRepository
 from database_module.words_repo import WordRepository
@@ -21,16 +21,9 @@ class manager:
     async def builder_data(self):
         if self.list_args and self.args_len >= 1:
             access = await GetMembers(self.peer)
-            repoQuote = QuoteRepository(self.peer,self.fromid)
             repoRoles = RoleRepository(self.peer,self.fromid)
             repoWords = WordRepository(self.peer,self.fromid)
             statements = {
-                #quotes
-                Commands.quote_create.value: (repoQuote.add_quote,(self.lines,"Создано",access['all_members'])),
-                Commands.quote_delete.value: (repoQuote.del_quote,(self.lines,"Удалено",access['all_members'])),
-                Commands.quote_kill.value  : (repoQuote.clear_data,("Данные уничтожены",access['admins'])),
-                Commands.quote_update.value: (repoQuote.update_quote,(self.list_args,self.lines,"Обновлено",access['all_members'])),
-                Commands.quote_list.value  : (repoQuote.list_quotes,()),
                 #roles
                 Commands.role_create.value : (repoRoles.create_role,(self.lines,"Создано",access['all_members'])),
                 Commands.role_delete.value : (repoRoles.del_role,(self.lines,"Удалено", access['all_members'])),
@@ -51,7 +44,7 @@ class manager:
     async def count(self):
         if self.args_len == 2:
             if Patterns.pattern_bool(self.list_args[1],[Patterns.chance_pattern]):
-                await PeerRepository(self.peer).toggle_count(self.list_args[1])
+                #await PeerRepository(self.peer).toggle_count(self.list_args[1])
                 self.send_msg.msg = f"Значение установлено на {self.list_args[1]}"
             else: self.send_msg.msg = f"Значение должно быть 0-100 (%)"
 
@@ -61,9 +54,8 @@ class manager:
         if opt: 
             for key in opt: opt[key] = Formatter.emojy_format(opt[key])
         self.send_msg.msg = f"🆔 : {opt['peer_id']} \n " \
-                       f"🎚 Частота вывода цитат: {opt['count_period']}\n"\
+                       f"🎚 Частота генерации текста: {opt['g_txt']}\n"\
                        f"💕💯 полигамные браки: {opt['poligam_marry']}\n"\
-                       f"📜 Вывод шаблонов(цитаты): {opt['quotes']}\n"\
                        f"📑 Вывод шаблонов(слова): {opt['words']}\n"\
     
     async def marry_toggle(self):
@@ -72,8 +64,7 @@ class manager:
     async def toggle_word(self):
         self.send_msg.msg = await PeerRepository(self.peer).toggle_word()
 
-    async def toggle_quote(self):
-        self.send_msg.msg = await PeerRepository(self.peer).toggle_quote()
+
 ######################################################################################################
 
 

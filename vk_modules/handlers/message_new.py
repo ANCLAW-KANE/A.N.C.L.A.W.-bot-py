@@ -40,7 +40,7 @@ async def markov_data(message: Message) -> None:
     await message.answer(response)
         
 @labeler.message(~MessageNotEmpty(),AttachmentTypeRule("photo"),blocking=False)
-async def save_photo(message: Message) -> None:
+async def save_photo(message: Message):
     urls = [get_max_photo(i) for i in message.attachments[0:]]
     for img in urls: await download_image(img,path_img,message.peer_id)
     

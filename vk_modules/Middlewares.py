@@ -10,12 +10,14 @@ from CONFIG import path_img
 class RegistrationPeerMiddleware(BaseMiddleware[Message]):
 
     async def pre(self):
-        peerID = self.event.peer_id
-        ######################################### DB ########################################
-        await PeerRepository(peerID).create_settings_peer()  # Стандартные настройки чатов
-        await create_peer_table(peer=peerID) # Создание динамических таблиц (для хранения данных для каждого чата)
-        mRepo = MarkovRepository(self.event.peer_id)
-        await mRepo.add_to_history(message=self.event.text)
-        if not os.path.exists(f"{path_img}{peerID}/"):
-            os.makedirs(f"{path_img}{peerID}/")
-
+        try:
+            peerID = self.event.peer_id
+            ######################################### DB ########################################
+            await PeerRepository(peerID).create_settings_peer()  # Стандартные настройки чатов
+            await create_peer_table(peer=peerID) # Создание динамических таблиц (для хранения данных для каждого чата)
+            mRepo = MarkovRepository(self.event.peer_id)
+            await mRepo.add_to_history(message=self.event.text)
+            if not os.path.exists(f"{path_img}{peerID}/"):
+                os.makedirs(f"{path_img}{peerID}/")
+        except Exception as e:
+            print(e)

@@ -1,11 +1,6 @@
 from enum import Enum
 
 class Commands(Enum):
-    quote_create = ('quote', (2, 2), 'create')
-    quote_delete = ('quote', (2, 2), 'delete')
-    quote_kill   = ('quote', (1, 2),   'kill')
-    quote_update = ('quote', (2, 3), 'update')
-    quote_list   = ('quote', (1, 2),   'list')
 
     role_create  = ('role' , (5, 2), 'create')
     role_delete  = ('role' , (2, 2), 'delete')
@@ -19,12 +14,11 @@ class Commands(Enum):
     words_update = ('word', (2, 3), 'update')
     words_list   = ('word', (1, 2),   'list')
 
-    settings_wrq = ('word','role','quote')
+    settings_wrq = ('word','role')
     settings_count = 'count'
     settings_chat = 'chat'
     settings_marry = ('marry','брак')
     settings_words = 'words'
-    settings_quotes = 'quotes'
     
     mem = ('мем','mem','мемас','мемчик')
     cabal = 'cabal'
@@ -43,6 +37,21 @@ class Timestamp(Enum):
     month = ('месяц','месяца','месяцев','мес')
     year = ('год','года','лет','л')
     
+class ColorsRGB:
+    class default(Enum):
+        white = (255, 255, 255)
+        black = (5, 5, 5)
+    
+    class Colors(Enum):
+        red = (224, 74, 47)
+        light_blue = (142, 250, 246)
+        light_blue_deep = (36,193,255)
+        light_blue_1 = (92,192,242)
+        purple = (190, 115, 217)
+        green = (175, 224, 110)
+        orange = (255, 176, 66)
+        brown = (112,109,55)
+        light_gray = (209,209,209)
 
 size_values = list("smxopqryzw")
 max_user_id = 2000000000
@@ -58,3 +67,20 @@ platforms = {
     7: 'полная версия сайта'
 }
 
+treb_mems = {
+     '1': [((340,75),(465,155)),((520,190),(680,300))],
+     '2': [((160,70),(300,160)),((575,55),(710,140))],
+     '3': [((460,315),(690,470)),((650,690),(890,850))],
+     '4': [((545,200),(765,340))],
+     '5': [((520,190),(680,300))],
+     '6': [((460,315),(690,470))],
+     '7': [((570,70),(730,170))],
+     '8': [((300,110),(490,240))],
+     '9': [((625,80),(890,260))],
+    '10': [((745,85),(950,215))],
+    '11': [((545,135),(790,300))],
+    '12': [((410,110),(620,250))],
+    '13': [((575,55),(710,140))],
+    '14': [((580,105),(815,260))],
+    '15': [((670,340),(860,470))]
+}

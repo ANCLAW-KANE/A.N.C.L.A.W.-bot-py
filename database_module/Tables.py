@@ -2,37 +2,45 @@ from sqlalchemy import Integer, Column, MetaData, Text, UniqueConstraint, Table,
 from sqlalchemy.ext.asyncio import create_async_engine,AsyncSession
 from sqlalchemy.exc import ObjectNotExecutableError,DBAPIError
 from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
-
+from typing import Union , Any , List
 from tools import Formatter,check_index
 
 
 path = 'sqlite+aiosqlite:///database_module/'
 
 peerDB = create_async_engine(f'{path}peer.db')
-quotesDB = create_async_engine(f'{path}peer_quotes.db')
+hashDB = create_async_engine(f'{path}hash.db')
 rolesDB = create_async_engine(f'{path}peer_roles.db')
 wordsDB = create_async_engine(f'{path}peer_words.db')
 markovDB = create_async_engine(f'{path}peer_texts_markov.db')
 
 BasePeer = declarative_base()
+BaseHash = declarative_base()
 mdWords = MetaData()
 mdRoles = MetaData()
-mdQuotes = MetaData()
 mdMarkov = MetaData()
 
 ##########################################################################################################################
 
 class Peers(BasePeer):
+    __table_args__ = {'extend_existing': True}
     __tablename__ = "peers"
     peer_id = Column(autoincrement=False,primary_key=True,type_=Integer())
-    count_period = Column(autoincrement=False,type_=Integer())
     e_g_mute = Column(autoincrement=False,type_=Integer())
     e_g_head = Column(autoincrement=False,type_=Integer())
     e_g_ex = Column(autoincrement=False,type_=Integer())
     resend = Column(autoincrement=False,type_=Integer())
     poligam_marry = Column(autoincrement=False,type_=Integer())
     words = Column(autoincrement=False,type_=Integer())
-    quotes = Column(autoincrement=False,type_=Integer())
+    g_txt = Column(autoincrement=False,type_=Integer())
+    g_dem = Column(autoincrement=False,type_=Integer())
+    g_ldem = Column(autoincrement=False,type_=Integer())
+    g_sticker = Column(autoincrement=False,type_=Integer())
+    
+class HashAudio(BaseHash):
+    __tablename__ = "hashaudio"
+    md5hash = Column(primary_key=True,autoincrement=False,type_=Text())
+    url = Column(type_=Text())
 
 class Nodes(BasePeer):
     __tablename__ = "nodes"
@@ -91,12 +99,6 @@ class DynamicsTables():
             extend_existing=True
         )
     
-    async def tableQuotes(self):
-        return Table(self.peer,mdQuotes,
-            Column(name='id', type_=Integer(),primary_key=True,autoincrement=True),
-            Column(name='quote', type_=Text()),
-            extend_existing=True
-        )
 
     async def tableMarkov(self):
         return Table(self.peer,mdMarkov,
@@ -116,20 +118,19 @@ async def create_peer_table(peer: str):
         peer = str(peer)
     mdW = await DynamicsTables(peer).tableWords()
     mdR = await DynamicsTables(peer).tableRoles()
-    mdQ = await DynamicsTables(peer).tableQuotes()
     mdM = await DynamicsTables(peer).tableMarkov()
     await check_exist_table(wordsDB,peer,mdW)
     await check_exist_table(rolesDB,peer,mdR)
-    await check_exist_table(quotesDB,peer,mdQ)
     await check_exist_table(markovDB,peer,mdM)
 
 
 ###################################################### TOOLS ###############################################################
 
 class DBexec():
-    def __init__(self,bind,query):
+    def __init__(self,bind,query: Union[List,Any]):
         self.bind = bind
-        self.session = scoped_session(sessionmaker(bind=bind,class_=AsyncSession, expire_on_commit=False, autoflush=True))()
+        self.session = scoped_session(
+            sessionmaker(bind=bind,class_=AsyncSession, expire_on_commit=False, autoflush=True))()
         self.query = query
 
     async def dbselect(self,fetch="all" ):
@@ -153,8 +154,13 @@ class DBexec():
     async def dbedit(self):
         async with self.session as s:
             async with s.begin_nested():
-                await s.execute(self.query)
-                await s.commit()
+                if isinstance(self.query,list):
+                    for obj in self.query:
+                        await s.merge(obj)
+                    await s.commit()
+                else:
+                    await s.execute(self.query)
+                    await s.commit()
         await s.close()
 ##########################################################################################################################
 
@@ -204,9 +210,9 @@ class Executor_with_access:# воспомогательный класс дл�
 ############################################ Repository Dynamics Tables strings ############################################
 strings = {
             'delete_ids': "Операция не выполнена, проверьте аргументы. Шаблон команды (В <> одно из параметров):\n"\
-                f"/settings <word,role,quote> delete\n1 2 3 4 ... (список id)",
+                f"/settings <word,role> delete\n1 2 3 4 ... (список id)",
             'update_roles': "Неверный формат, шаблон для создания(или обновления) роли : \n /settings role create\n"\
              f" Команда_без_пробелов\n эмоджи \n Строка действия \n Эмоджи \n",
              'update_words': "Операция не выполнена, укажите id для обновления:\n"\
-                f"/settings <quote,word> update <id>\n Обновлённая строка>"
+                f"/settings word update <id>\n Обновлённая строка>"
         }

@@ -20,8 +20,9 @@ class Patterns:
     club_pattern = r"\[club(\d+)\|(@?[^\]]+)\]"
     chat_id_pattern = r"[0-9]{1,10}"
     id_telegram_chat_pattern = r"-[0-9]{9,13}"
-    chance_pattern = r"100|[0-9]{1,2}"
-
+    chance_pattern = r"100|\b[0-9]{1,2}\b"
+    md5 = r"([0-9a-f]{1,32})"
+    
     def pattern_bool(text,patterns,logic="and")-> bool:
         bools = []
         for pattern in patterns:
@@ -131,7 +132,8 @@ class Writer:
 
     def read_file_json(name):
         try:
-            with open(name, "r") as f:  data = json.load(f)
+            with open(name, "r") as f:  
+                data = json.load(f)
             return data
         except:
             print("Файл отсутствует или поврежден")
@@ -279,6 +281,13 @@ def check_index(obj,index):
 def remove_mention(text):
     txt = text.split()
     return [element for element in txt if Patterns.pattern_bool(element,[Patterns.user_pattern, Patterns.club_pattern]) == False]
+
+def time_media(time):
+    hours = time // 3600
+    minutes = (time % 3600) // 60
+    seconds = time % 60
+    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    return formatted_time
 
 def parse_time(time):
     try:
