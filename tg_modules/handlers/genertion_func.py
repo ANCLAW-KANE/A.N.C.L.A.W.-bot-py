@@ -5,7 +5,7 @@ from sessions_tg import bot_aiogram
 from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters.command import Command, CommandObject
-from tg_modules.handlers.commands_repos import GenerateSettings
+from markov.generator_settings_manager import GenerateSettings
 from aiogram.filters.logic import and_f
 from tg_modules.handlers.filters import ChatTypeFilter,group_chat
 
@@ -13,14 +13,12 @@ router = Router()
 
 @router.message(and_f(Command("g"),ChatTypeFilter(group_chat)))
 async def gen_text(msg: Message):
-    logger.debug(f"msg: {msg.from_user.first_name} {msg.from_user.last_name} ::: {msg.text}| chat_id: {msg.chat.id}")
     g = await get_data_markov(msg.chat.id)
     txt = await g.generate_text()
     await bot_aiogram.send_message(msg.chat.id, txt)
 
 @router.message(and_f(Command("gd"),ChatTypeFilter(group_chat)))
 async def gen_dem(msg: Message):
-    logger.debug(f"msg: {msg.from_user.first_name} {msg.from_user.last_name} ::: {msg.text}| chat_id: {msg.chat.id}")
     g = await get_data_markov(msg.chat.id)
     img = await g.generate_demotivator()
     if img:  await send_photo(msg.chat.id,img,'gd')
@@ -28,22 +26,22 @@ async def gen_dem(msg: Message):
 
 @router.message(and_f(Command("gl"),ChatTypeFilter(group_chat)))
 async def gen_l_text(msg: Message):
-    logger.debug(f"msg: {msg.from_user.first_name} {msg.from_user.last_name} ::: {msg.text}| chat_id: {msg.chat.id}")
     g = await get_data_markov(msg.chat.id)
     txt = await g.generate_long_text()
+    if not txt: txt = "Мало данных для генерации"
     await msg.answer(txt)
 
 @router.message(and_f(Command("gdl"),ChatTypeFilter(group_chat)))
 async def gen_long_dem(msg: Message):
-    logger.debug(f"msg: {msg.from_user.first_name} {msg.from_user.last_name} ::: {msg.text}| chat_id: {msg.chat.id}")
     g = await get_data_markov(msg.chat.id)
-    img = await g.generate_big_demotivator()
-    if img:  await send_photo(msg.chat.id,img,'gdl')
-    else : await msg.answer('Нет изображений в базе данных')
+    img = await g.generate_big_demotivator(square=True)
+    if not img: 
+        await msg.answer("Мало данных для генерации ")
+        return
+    await send_photo(msg.chat.id,img,'gdl')
 
 @router.message(and_f(Command("gset"),ChatTypeFilter(group_chat)))
 async def settings_manager(msg: Message,command: CommandObject):
-    logger.debug(f"msg: {msg.from_user.first_name} {msg.from_user.last_name} ::: {msg.text}| chat_id: {msg.chat.id}")
     arguments = command.args.split() if command.args else [None]
     setting = arguments[0]
     args = arguments[1:] if len(arguments) >= 1 else None

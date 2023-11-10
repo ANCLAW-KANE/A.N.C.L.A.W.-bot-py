@@ -14,7 +14,7 @@ from aiogram.filters.logic import and_f
 router = Router()
 
 async def process_ldem(generator,msg):
-    txt = await generator.generate_big_demotivator()
+    txt = await generator.generate_big_demotivator(square=True)
     if txt: await send_photo(msg.chat.id, txt, 'gdl')
 
 async def process_dem(generator,msg):
@@ -43,7 +43,6 @@ async def get_photo(msg: Message):
 @router.message(and_f(F.text,ChatTypeFilter(group_chat)))
 @router.message(and_f(F.sticker,ChatTypeFilter(group_chat)))
 async def text_msg(msg: Message):
-    logger.info(f"msg: {msg.from_user.first_name} {msg.from_user.last_name} ::: {msg.text}| chat_id: {msg.chat.id}")
     peer_repo = await PeerRepository(msg.chat.id).get_params_peer()
     r = random.randint(0, 100)
     generator = await get_data_markov(msg.chat.id)

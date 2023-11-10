@@ -51,35 +51,33 @@ class Generator:
         logger.warning(f"txts :gen: {end_time - start_time}")
         return strings
     
-    async def generate_long_text(self,max_length=False,iter=4) -> str:
-        text_models = []
-        for _ in range(iter):
-            try: r = random.sample(self.msg, random.randint(15, 100))
-            except: return "Мало данных для генерации "
-            text_model_long = markovify.Text(input_text="\n".join(r), well_formed=False)
-            text_models.append(text_model_long)
+    async def generate_long_text(self,max_length=False,iter=4,state_size=2) -> str | None:
+        if len(self.msg) < 500: return None
+        text_models = [
+            markovify.Text(
+                state_size=state_size,
+                input_text="\n".join(random.sample(self.msg, random.randint(350, 500))),
+                well_formed=True
+            ) for _ in range(iter)
+        ]
         res = markovify.combine(text_models, [random.randint(1, 4) for _ in range(iter)])
-        t = []
         target_length = random.randint(3, 6) if not max_length else 50
-        for _ in range(target_length):
-            if res: t.append(res.make_sentence(min_words=10, max_words=100))
-            else: t.append(text_model_long.make_sentence(min_words=10, max_words=100))
+        t = [res.make_short_sentence(max_chars=MAX_MSG_LENGTH ,min_words=10, max_words=100) for _ in range(target_length)]
         new_list = [i for i in t if i]
-        if not new_list and not max_length: return ' '.join(random.sample(self.msg, random.randint(6 , 10)))
-        else:
-            long = ' '.join(new_list)
-            return long if len(long) < MAX_MSG_LENGTH else textwrap.shorten(long, width=MAX_MSG_LENGTH-4, placeholder="")
+        long = ' '.join(new_list)
+        width = random.randint(200 , 300) if not max_length else random.randint(600 , 800)
+        return textwrap.shorten(long, width=width, placeholder="")
     
     async def _get_random_file(self,dir=None,num=1):
         dir_name = dir if dir else self.obj 
         f = os.listdir(f"{path_img}{dir_name}/")
-        if f: 
+        if f:
             files = random.sample(f,num)
             return [f"{path_img}{dir_name}/{i}" for i in files] if len(files) > 1 else f"{path_img}{dir_name}/{files[0]}"
     
     async def generate_demotivator(self):
         start_time = time.time()
-        f = await self._get_random_file()
+        f = await self._get_random_file(num=random.randint(1,2))
         if f:
             texts = await self.generate_text_list(num=12,size=400,state=1)
             g = Image_generator(self.obj,f,texts)
@@ -89,18 +87,19 @@ class Generator:
             logger.warning(f"gd :gen: {end_time - start_time}")
             return data
         
-    async def generate_big_demotivator(self,file_static=None,color = None):
+    async def generate_big_demotivator(self,file_static=None,color = None,square=None,new_height=800):
         start_time = time.time()
         file = await self._get_random_file(num=random.randint(1,2)) if file_static == None\
             else [f"{path_img}{self.obj}/{file_static}"] 
-        if file:
-            txt = await self.generate_long_text(max_length=True,iter=16)
-            g = Image_generator(self.obj,file,txt)
-            task = asyncio.create_task(g.big_gen(color))
-            data = await task
-            end_time = time.time()
-            logger.warning(f"gdl :gen: {end_time - start_time}")
-            return data
+        txt = await self.generate_long_text(max_length=True,iter=16)
+        if not file or not txt:
+            return None
+        g = Image_generator(self.obj,file,txt)
+        task = asyncio.create_task(g.big_gen(color=color,square=square,new_height=new_height))
+        data = await task
+        end_time = time.time()
+        logger.warning(f"gdl :gen: {end_time - start_time}")
+        return data
         
     async def gen_mem(self,dir='default'):
         start_time = time.time()

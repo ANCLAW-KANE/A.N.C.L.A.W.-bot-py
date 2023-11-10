@@ -14,7 +14,6 @@ class RoleCommand(ExtendParams,String_parse,NameBuilder,Roles,FuncMarry):
         self.send_msg = data_msg()
         ExtendParams.__init__(self)
         String_parse.__init__(self,txt,obj)
-        self.params()
         self.parse("!")
         NameBuilder.__init__(self,fromid,peer)
         Roles.__init__(self,fromid)

@@ -5,7 +5,7 @@ from vkbottle.dispatch.rules import ABCRule,OrRule
 from database_module.Tables import Peers,peerDB,DBexec
 from database_module.peer_repo import PeerRepository
 
-prefixs = ['/','!','$']
+prefixs = ('/','!','$','@')
 
 class MessageNotEmpty(OrRule[Message]):
     async def check(self, m:Message)  -> bool:
@@ -40,7 +40,7 @@ class MsgParamWordsRule(ABCRule[Message]):
     async def check(self, m:Message)  -> bool:
         if m.text != '' or None:
             logger.log("STATE","\n___WORDRULE___")
-            w = await DBexec(peerDB,select(Peers.words)).dbselect("one")
+            w = await DBexec(peerDB,select(Peers.words)).dbselect(DBexec.FETCH_ONE)
             return w == 1
         
 class MuteRule(ABCRule[Message]):

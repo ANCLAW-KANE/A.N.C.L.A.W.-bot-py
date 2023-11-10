@@ -8,23 +8,7 @@ for _ in range(0,101):
         print(f"■{z}",end='')
 """
 
-"""
-import timeit
 
-set1 = set(range(10000))
-
-set2 = set(range(5000, 15000))
-
-
-time_intersection = timeit.timeit(lambda: set1.intersection(set2), number=10000)
-
-time_and = timeit.timeit(lambda: set1 & set2, number=10000)
-
-
-print("Время выполнения intersection():", time_intersection)
-
-print("Время выполнения &: ", time_and)
-        """
 
 """class Params:
     def __init__(self, peer_id, man1, man2, man1name, man2name, allow, await_state):
@@ -55,6 +39,3 @@ def params_marry_control() -> Optional[Params]:
 a = params_marry_control() 
 print(a.peer_id)"""
 
-import asyncio
-from tg_modules.api_vk_helper import get_audio
-asyncio.run(get_audio())

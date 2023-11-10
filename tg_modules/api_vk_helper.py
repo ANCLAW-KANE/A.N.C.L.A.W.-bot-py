@@ -68,31 +68,47 @@ async def get_audio(q:str,json_hash_name:str):
         audios = await api_request(token = vktokenUser, method='audio.search',
                         q=q,count=300, offset=300*(block))
         ids = ",".join([f"{i['owner_id']}_{i['id']}" for i in audios['items']])
-        audio_with_url =await api_request(token=vktokenUser,method="audio.getById",audios=ids)
-        data_hash = [
-            {
-                'url': i['url'],
-                'md5hash': md5(i['url'].encode()).hexdigest()
-            } for i in audio_with_url
-        ]
-        data = [
+        if ids:
+            audio_with_url =await api_request(token=vktokenUser,method="audio.getById",audios=ids)
+            data_hash = [
                 {
-                    'url': md5(i['url'].encode()).hexdigest(), 
-                    'artist': i['artist'],
-                    'title': i['title'],
-                    'duration': time_media(i['duration'])
+                    'url': i['url'],
+                    'md5hash': md5(i['url'].encode()).hexdigest(),
+                    'name_audio': f"{i['artist']}-{i['title']}"
                 } for i in audio_with_url
-        ]
-        data_pack_hash.extend(data_hash)
-        data_pack.extend(data)
-    
+            ]
+            data = [
+                    {
+                        'url': md5(i['url'].encode()).hexdigest(), 
+                        'artist': i['artist'],
+                        'title': i['title'],
+                        'duration': time_media(i['duration'])
+                    } for i in audio_with_url
+            ]
+            data_pack_hash.extend(data_hash)
+            data_pack.extend(data)
+    if not data_pack and not data_hash:
+        return None
     with open(f'temps/{json_hash_name}.json','w') as f: json.dump(data_pack,f)
     await add_data_hash_audio(data_pack_hash)
     end_time = time.time()
     logger.warning(f" :find audio vk: {end_time - start_time}")
     return data_pack
+    
 
 async def get_content(url: str):
+    userAgent = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Mobile Safari/537.36'
+
+    headers = {     
+                'User-Agent': userAgent,
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+            }
     async with ClientSession() as session:
-            async with session.get(url) as f:
+            async with session.get(url,headers=headers) as f:
                 if f.ok:  return await f.read()

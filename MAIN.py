@@ -58,11 +58,11 @@ async def check_unmute():
     logger.log("STATE","\n_________________________LW-checkUnmute_________________________")
     peerRepo = PeerRepository(None)
     ids = await peerRepo.check_unmute()
-    if ids:
-        await peerRepo.unmute(ids['delete_ids'])
-        for i in ids['peers']:
-            names = [await getUserName(obj=user,peer=i,return_mentions=True) for user in ids["peers"].get(i)]
-            await api_group.messages.send(peer_id=i,message=f'C {", ".join(names)} был снят мут',random_id=0)
+    if not ids: return
+    await peerRepo.unmute(ids['delete_ids'])
+    for i in ids['peers']:
+        names = [await getUserName(obj=user,peer=i,return_mentions=True) for user in ids["peers"].get(i)]
+        await api_group.messages.send(peer_id=i,message=f'C {", ".join(names)} был снят мут',random_id=0)
 
 #######################################################################################
 vb.error_handler.register_error_handler(handle_vk_error,handle_exception_error)

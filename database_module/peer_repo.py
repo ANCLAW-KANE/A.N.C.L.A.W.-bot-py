@@ -24,7 +24,7 @@ class PeerRepository:
         
     async def check_nick(self):
         return await DBexec(peerDB,select(Nicknames.nickname).where(
-            Nicknames.peer_id == self.peer,Nicknames.user_id == self.fromid)).dbselect("line")
+            Nicknames.peer_id == self.peer,Nicknames.user_id == self.fromid)).dbselect(DBexec.FETCH_LINE)
 
     async def set_nickname(self,nick):
         print(await self.check_nick())
@@ -41,8 +41,8 @@ class PeerRepository:
     #    return await DBexec(peerDB,select(Peers.&&&&&).where(Peers.peer_id == self.peer)).dbselect("one")
     
     async def toggle_marry(self):
-        return await DBmanager(peerDB, Peers, Peers.poligam_marry, Peers.peer_id == self.peer, ['Полигамный брак разрешен',
-                                                                            'Полигамный брак запрещен']).key("poligam_marry")
+        return await DBmanager(peerDB, Peers, Peers.poligam_marry, Peers.peer_id == self.peer, ['Множественный брак разрешен',
+                                                                            'Множественный брак запрещен']).key("poligam_marry")
     
     async def toggle_word(self):
         return await DBmanager(peerDB, Peers, Peers.words, Peers.peer_id == self.peer, ['Шаблоны (слова) включены',
@@ -80,7 +80,7 @@ class PeerRepository:
 
     async def check_id_mute(self,user):
         date_mute = await DBexec(peerDB,select(Mutes.data_end).where(
-            Mutes.peer_id == self.peer, Mutes.user_id == user)).dbselect("one")
+            Mutes.peer_id == self.peer, Mutes.user_id == user)).dbselect(DBexec.FETCH_ONE)
         if date_mute: return datetime.now().replace(second=0,microsecond=0) < date_mute
         else: return False 
 

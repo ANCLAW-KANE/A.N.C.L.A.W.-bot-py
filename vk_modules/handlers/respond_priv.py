@@ -18,7 +18,6 @@ class privileges(ExtendParams, String_parse, NameBuilder):
         self.peer = peer
         self.obj = obj
         ExtendParams.__init__(self)
-        self.params()
         String_parse.__init__(self, txt, obj)
         self.parse('$')
         NameBuilder.__init__(self, fromid, peer)

@@ -11,11 +11,10 @@ from enums import ColorsRGB
 
 
 
-router = Router()
+router = Router(name="exc")
 
 @router.message(and_f(Command("t"),ChatIDFilter(tr_chat)))
 async def gen_tr(msg: Message):
-    logger.debug(f"msg: {msg.from_user.first_name} {msg.from_user.last_name} ::: {msg.text}| chat_id: {msg.chat.id}")
     g = await get_data_markov(msg.chat.id)
     img = await g.gen_mem('trbnk')
     if img:  await send_photo(msg.chat.id,img,'gtr')
@@ -23,8 +22,10 @@ async def gen_tr(msg: Message):
 
 @router.message(and_f(Command("th"),ChatIDFilter(tr_chat)))
 async def gen_tr(msg: Message):
-    logger.debug(f"msg: {msg.from_user.first_name} {msg.from_user.last_name} ::: {msg.text}| chat_id: {msg.chat.id}")
     g = await get_data_markov(msg.chat.id)
-    img = await g.generate_big_demotivator(file_static='hack_static',color=ColorsRGB.Colors.light_blue_1.value)
+    img = await g.generate_big_demotivator(file_static='hack_static',color=ColorsRGB.Colors.light_blue_1.value,new_height=1000)
+    if not img: 
+        await msg.answer("Мало данных для генерации ")
+        return
     await send_photo(msg.chat.id,img,'gtrHack')
 

@@ -2,6 +2,14 @@ import json
 from vk_modules.kb_handlers.func_handler_keyboard import KeyboardEventHandler
 from sessions_vk import api_group
 
+def payload_check(payload):
+    if isinstance(payload, str):
+        pay = json.loads(payload) # ответ от kate mobile
+        return pay['payload'] if pay.get('payload', None) else pay # ответ от vtosters и подобных
+    else:
+        return payload  # обычный ответ
+
+
 
 class keyboard_event(KeyboardEventHandler):
     def __init__(self, msg=None):
@@ -13,10 +21,7 @@ class keyboard_event(KeyboardEventHandler):
             self.fromid = self.msg.from_id #берет from_id от события (для совместимости с клиентами (Kate mobile и тд))
         self.cmid = self.msg.conversation_message_id
         self.peer = self.msg.peer_id
-        if isinstance(self.msg.payload,str): 
-            pay = json.loads(self.msg.payload)# ответ от kate mobile
-            self.pay = pay['payload'] if pay.get('payload',None) else pay #ответ от vtosters и подобных
-        else: self.pay = self.msg.payload #обычный ответ
+        self.pay = payload_check(self.msg.payload)
         self.pay_key_sep = str(list(self.pay.keys())[0]).split("_", 1)  # деление ключа на список аргументов
         self.keys = {
             "dir": self.pay_key_sep[0], # главный аргумент

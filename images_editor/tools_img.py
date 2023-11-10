@@ -20,11 +20,6 @@ async def draw_multiple_line_text(image: Image.Image, text, font: ImageFont.Free
             if line_width <= image_width:
                 draw.text(((image_width - line_width) / 2, y_text), line, font=font, fill=text_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
                 break
-            """if font.size < 15:
-                size = font.getlength(line)
-                newline = textwrap.shorten(line,int(size))
-                draw.text(((image_width - line_width) / 2, y_text), newline, font=font, fill=text_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
-                break"""
             font_size -= 1
         y_text += line_height + line_spacing
 
@@ -51,7 +46,7 @@ async def draw_multiple_line_text_in_textbox(image: Image.Image, text, font_size
     for line in lines:
         text_box = new_font.getbbox(line)
         text_height += text_box[3] - text_box[1] + line_spacing
-        if text_height <= max_height:###перепроверить
+        if text_height <= max_height:
             break
         lines.pop()
     #отрисовка
@@ -60,27 +55,46 @@ async def draw_multiple_line_text_in_textbox(image: Image.Image, text, font_size
         draw.text((xy[0][0], xy[0][1] + line_height), line, font=new_font, fill=text_color)
 
 
-async def resize_img(image: Image.Image ,new_height = 900,custom=False, ord= 1024):
+async def resize_img(image: Image.Image ,new_height, ord, indent ,custom=False) -> tuple[Image.Image, int]:
+    """
+    Args:
+        custom (bool, optional): Если True то вернет пропорциональное изображение с изменением ширины до максимально\
+        возможной. Defaults to False.
+    """
     width, height = image.size
     if custom:
-        new_width = width - int(width - ord + 100) # уменьшение ширины с учетом отступов (50 <> 50)
+        new_width = width - int(width - ord + indent) # уменьшение ширины с учетом отступов (50 <> 50)
     else:
         new_width = int((width * new_height) / height)
     return (image.resize((new_width, new_height)),new_width)
 
 
-async def multi_images(self,ord = 1024):
+async def multi_images(self,ord = None,
+        new_height = 900 , indent = None,square=False) -> list[tuple[Image.Image, int]]:
+    """
+    Args:
+        ord (int, optional): Середина фонового изображения по координате X. Defaults to None.\n
+        new_height (int, optional): Высота для нового изображения, если square true то высота и ширина будут равны. Defaults to 900.\n
+        indent (int, optional): Отступ от ord (делится на 2 для обоих сторон по X). Defaults to None.\n
+        square (bool, optional): Если True вернет квадратное изображение. Defaults to False.
+
+    """
     if type(self.file) == list:
         imgs = []
         for img in self.file:
             image = Image.open(img)
             width, height = image.size
-            if width > ord:#ширина вставляемого изображения больше середины исходного изображения
-                resized_image = await resize_img(image,custom=True)
-            else:
-                resized_image = await resize_img(image)
+            if square:#для квадратного изображения
+                resized_image = (image.resize((new_height, new_height)),new_height)
+            elif width > ord:#если ширина вставляемого изображения больше середины исходного изображения то подбирает 
+                # максимальную ширину вставляемого
+                resized_image = await resize_img(image= image,new_height = new_height ,ord= ord, indent = indent,custom=True)
+            else:#пропорциональное изображение
+                resized_image = await resize_img(image=image,new_height = new_height ,ord= ord, indent = indent)
             imgs.append(resized_image)
         return imgs
     else : 
         image = Image.open(self.file)
-        return [await resize_img(image)]
+        if square:
+            return [(image.resize((new_height, new_height)),new_height)]
+        return [await resize_img(image,new_height = new_height ,ord= ord, indent = indent)]

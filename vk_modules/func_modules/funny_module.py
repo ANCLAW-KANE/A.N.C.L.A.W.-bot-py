@@ -12,8 +12,7 @@ class Funny:
 
 #######################################/мем ######################################
     async def get_album_photos_mem(self):
-        #try:
-            photoList = []
+        try:
             list_a = await get_sort_all_albums(await get_list_album())
             alb = calc_albums(list_a)
             parse_album = alb.parse_album
@@ -22,12 +21,12 @@ class Funny:
                 alb_ph = await api_user.photos.get(owner_id=self.OWNER_ALBUM_PHOTO,
                                                    album_id=parse_album[0], count=50,
                                                    offset=random.randint(0, offset_max) * 50)
-                for photo in alb_ph.items:  photoList.append(str(photo.id))
+                photoList = [str(photo.id) for photo in alb_ph.items]
                 if photoList is not None or not []:
                     self.send_msg.attachment = f"photo{str(self.OWNER_ALBUM_PHOTO)}_{random.choice(photoList)}"
-        #except:
-        #    self.send_msg.msg = f'Мем спизжен китайцами , повторите позже...'
-        #    self.send_msg.attachment = 'photo388145277_456240127'
+        except:
+            self.send_msg.msg = f'Мем спизжен китайцами , повторите позже...'
+            self.send_msg.attachment = 'photo388145277_456240127'
 
 
     

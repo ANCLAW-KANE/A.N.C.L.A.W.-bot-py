@@ -34,13 +34,13 @@ class MarryRepository:
         params = await DBexec(peerDB,select(Marry.allow,Marry.await_state).where(
             and_(Marry.peer_id == self.peer,or_(
                     and_(Marry.man1 == self.fromid, Marry.man2 == selfid),
-                    and_(Marry.man1 == selfid, Marry.man2 == self.fromid))))).dbselect("line")
+                    and_(Marry.man1 == selfid, Marry.man2 == self.fromid))))).dbselect(DBexec.FETCH_LINE)
         print(f"PA {params}")
         if params: return {"await":params[1],"allow": params[0]}
         else: return params
 
     async def get_polygam_marry(self):
-        return await DBexec(peerDB,select(Peers.poligam_marry).where(Peers.peer_id == self.peer)).dbselect("one")
+        return await DBexec(peerDB,select(Peers.poligam_marry).where(Peers.peer_id == self.peer)).dbselect(DBexec.FETCH_ONE)
 
     async def params_marry_control(self,kb):
         fetch = await DBexec(peerDB,select(Marry).where(

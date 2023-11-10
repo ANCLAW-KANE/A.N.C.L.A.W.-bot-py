@@ -28,7 +28,5 @@ class Info:
             key = inf.get(self.list_args[0])
             await key[0](*key[1])
         else:
-            mess = '/i:\n'
-            mess += unpack_keys(inf,'ℹ️')
-            self.send_msg.msg = mess
+            self.send_msg.msg = f"/i:\n {unpack_keys(inf,'ℹ️')}"
 

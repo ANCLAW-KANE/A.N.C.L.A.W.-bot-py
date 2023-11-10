@@ -1,9 +1,9 @@
-from sqlalchemy import Integer, Column, MetaData, Text, UniqueConstraint, Table, delete, select, update, insert,DateTime
+from sqlalchemy import Integer, Column, MetaData, Text, UniqueConstraint, Table, delete, select, update, DateTime
 from sqlalchemy.ext.asyncio import create_async_engine,AsyncSession
 from sqlalchemy.exc import ObjectNotExecutableError,DBAPIError
 from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 from typing import Union , Any , List
-from tools import Formatter,check_index
+
 
 
 path = 'sqlite+aiosqlite:///database_module/'
@@ -41,6 +41,7 @@ class HashAudio(BaseHash):
     __tablename__ = "hashaudio"
     md5hash = Column(primary_key=True,autoincrement=False,type_=Text())
     url = Column(type_=Text())
+    name_audio = Column(type_=Text())
 
 class Nodes(BasePeer):
     __tablename__ = "nodes"
@@ -127,27 +128,32 @@ async def create_peer_table(peer: str):
 ###################################################### TOOLS ###############################################################
 
 class DBexec():
+    FETCH_ONE = 'one'
+    FETCH_LINE = 'line'
+    FETCH_ALL = 'all'
     def __init__(self,bind,query: Union[List,Any]):
         self.bind = bind
         self.session = scoped_session(
             sessionmaker(bind=bind,class_=AsyncSession, expire_on_commit=False, autoflush=True))()
         self.query = query
 
-    async def dbselect(self,fetch="all" ):
+    async def dbselect(self,fetch=FETCH_ALL):
         """
-        fetch : str = "all"  запрос на всю выборку (default),\n
-                      "one"  запрос на один параметр из списка,\n
-                      "line" запрос на список параметров,
+        fetch : 
+            FETCH_ALL запрос на всю выборку (default),\n
+            FETCH_ONE запрос на один параметр из списка,\n
+            FETCH_LINE запрос на список параметров,
         """ 
         async with self.session as s:
             async with s.begin_nested():
-                if fetch == "one":
-                    try: result = (await s.execute(self.query)).fetchone()[0]
+                query = await s.execute(self.query)
+                if fetch == DBexec.FETCH_ONE:
+                    try: result = query.fetchone()[0]
                     except: result = None##
-                if fetch == "line":
-                    result = (await s.execute(self.query)).fetchone()
-                if fetch == "all":
-                    result = (await s.execute(self.query)).fetchall()
+                elif fetch == DBexec.FETCH_LINE:
+                    result = query.fetchone()
+                elif fetch == DBexec.FETCH_ALL:
+                    result = query.fetchall()
             await s.close()
         return result
     
@@ -165,22 +171,20 @@ class DBexec():
 ##########################################################################################################################
 
 class DBmanager:
-    def __init__(self,session,table,table_param,condition,messages: list) -> None:
+    def __init__(self,session,table,table_param,condition,messages: list[str]) -> None:
         self.session = session
         self.table = table
         self.table_param = table_param
         self.condition = condition
         self.messages = messages
 
-    async def key(self,value)-> str:  # для переключения 0 1 значений в БД
+    def __invert__(self,param): # для переключения 0 1 значений в БД
+        return (1,self.messages[0]) if param == 0 else ((0,self.messages[1]))
+
+    async def key(self,value)-> str: 
         try:
-            param = await DBexec(self.session, select(self.table_param).where(self.condition)).dbselect(fetch='one')
-            if param == 0:
-                param = 1
-                msg = self.messages[0]
-            elif param == 1:
-                param = 0
-                msg = self.messages[1]
+            param_key = await DBexec(self.session, select(self.table_param).where(self.condition)).dbselect(fetch=DBexec.FETCH_ONE)
+            param , msg = self.__invert__(param=param_key)
             await DBexec(self.session,update(self.table).where(self.condition).values({f"{value}": param})).dbedit()
             return msg
         except Exception as e: return f"Не выполнено, проверьте аргументы.{e}"
@@ -188,7 +192,7 @@ class DBmanager:
    
 class Executor_with_access:# воспомогательный класс для некоторых запросов с проверкой прав
 
-    def __init__(self,session,query,sender , message,access=None) -> None:
+    def __init__(self,session,query,sender , message:str,access : list =None) -> None:
         self.session = session
         self.query = query
         self.sender = sender
@@ -196,16 +200,13 @@ class Executor_with_access:# воспомогательный класс дл�
         self.access = access
 
     async def exec(self)-> str:
-        if self.sender in self.access or self.access is None:
-            try:
-                await DBexec(self.session,self.query).dbedit()
-                msg = self.message
-                pass
-            except DBAPIError:
-                    msg = "Не выполнено, проверьте аргументы. (Или данная запись уже есть)"
-        else:
-            msg = "Нет прав"
-        return msg
+        if self.sender not in self.access or self.access is not None:
+            return "Нет прав"
+        try:
+            await DBexec(self.session,self.query).dbedit()
+            return self.message
+        except DBAPIError:
+            return "Не выполнено, проверьте аргументы. (Или данная запись уже есть)"
     
 ############################################ Repository Dynamics Tables strings ############################################
 strings = {

@@ -2,17 +2,19 @@ from database_module.peer_repo import PeerRepository
 from tools import Patterns
 
 class GenerateSettings:
-    def __init__(self,chat,fromid=None) -> None:
+    def __init__(self,chat,fromid=None,arg_index=0,len_index=1) -> None:
         self.peerRepo = PeerRepository(chat,fromid)
         self.failure = f"Ошибка в аргументах! Не указан аргумент или он не является целым числом. Укажите шанс в диапазоне 0-100"
+        self.param_chance = arg_index
+        self.len_index = len_index
 
-    async def _check_rule(self, args, n=1):
-        return args and len(args) >= n and Patterns.pattern_bool(args[0], [Patterns.chance_pattern])
+    async def _check_rule(self, args):
+        return args and len(args) >= self.len_index and Patterns.pattern_bool(args[self.param_chance], [Patterns.chance_pattern])
 
     async def _set_chance(self, args, method_name,desc = ''):
         if await self._check_rule(args):
-            await getattr(self.peerRepo, method_name)(args[0])
-            return f"{desc} с шансом {args[0]}"
+            await getattr(self.peerRepo, method_name)(args[self.param_chance])
+            return f"{desc} с шансом {args[self.param_chance]}"
         else:
             return self.failure
 

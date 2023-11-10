@@ -12,8 +12,6 @@ from vk_modules.func_modules.info_module import Info
 from vk_modules.func_modules.generators import Generate
 from vkbottle.bot import Message , BotLabeler
 
-
-
 ######################################################################################################
 class Respondent_command(ExtendParams,String_parse,NameBuilder,Administration,Funny,Info,Cabal,Generate,manager):
     def __init__(self, txt, fromid, peer, obj,):
@@ -24,7 +22,6 @@ class Respondent_command(ExtendParams,String_parse,NameBuilder,Administration,Fu
         ExtendParams.__init__(self)
         String_parse.__init__(self,txt,obj)
         NameBuilder.__init__(self,fromid,peer)
-        self.params()
         self.parse('/')
         Administration.__init__(self)
         Funny.__init__(self)

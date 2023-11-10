@@ -4,7 +4,7 @@ from enums import max_user_id
 from database_module.peer_repo import PeerRepository
 
 class ExtendParams:
-    def params(self):
+    def __init__(self):
         self.sender = ""        # имя отправителя
         self.Members = None     # список участников чата
         self.reply = None       # ответ на сообщение

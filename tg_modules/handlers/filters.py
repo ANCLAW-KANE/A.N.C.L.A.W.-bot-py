@@ -20,9 +20,6 @@ class ChatTypeFilter(BaseFilter):
         else:
             return data.chat.type in self.chat_type
     
-
-        
-
 class ChatIDFilter(BaseFilter):  
     def __init__(self, chat_id: int):
         self.chat_id = chat_id
