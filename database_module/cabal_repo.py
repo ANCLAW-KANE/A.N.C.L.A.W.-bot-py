@@ -63,7 +63,7 @@ class CabalRepository:
 
     async def priveleges_get(self):
         p = await DBexec(peerDB,select(Peers.e_g_ex,Peers.e_g_head,Peers.e_g_mute).where(
-            Peers.peer_id == self.peer)).dbselect('line')
+            Peers.peer_id == self.peer)).dbselect(DBexec.FETCH_LINE)
         
         return {
             "e_g_ex": p[0],

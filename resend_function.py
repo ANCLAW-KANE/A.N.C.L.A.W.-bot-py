@@ -1,6 +1,6 @@
 import os, requests, time, traceback, random
 from tools import logger, write_file, convert_img, TEXT_SPLIT, json_config
-from sessions import bot, upload, vk, client
+from sessions_vk import bot, upload, vk, client
 from CONFIG import IdGroupVK
 
 

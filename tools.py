@@ -3,11 +3,16 @@ from datetime import datetime, timedelta
 from functools import reduce
 from itertools import chain
 import json, random, string, os, pickledb,re,glob
+import math
+import aiofiles
+import aiohttp
 from PIL import Image
 from CONFIG import config_file_json
 from zipstream import AioZipStream
-from enums import Timestamp
+from enums import Timestamp,size_values
 from loguru import logger
+from typing import NamedTuple
+
 ############################################################################
 
 class Patterns:
@@ -15,8 +20,9 @@ class Patterns:
     club_pattern = r"\[club(\d+)\|(@?[^\]]+)\]"
     chat_id_pattern = r"[0-9]{1,10}"
     id_telegram_chat_pattern = r"-[0-9]{9,13}"
-    chance_pattern = r"100|[0-9]{1,2}"
-
+    chance_pattern = r"100|\b[0-9]{1,2}\b"
+    md5 = r"([0-9a-f]{1,32})"
+    
     def pattern_bool(text,patterns,logic="and")-> bool:
         bools = []
         for pattern in patterns:
@@ -126,7 +132,8 @@ class Writer:
 
     def read_file_json(name):
         try:
-            with open(name, "r") as f:  data = json.load(f)
+            with open(name, "r") as f:  
+                data = json.load(f)
             return data
         except:
             print("Файл отсутствует или поврежден")
@@ -275,6 +282,13 @@ def remove_mention(text):
     txt = text.split()
     return [element for element in txt if Patterns.pattern_bool(element,[Patterns.user_pattern, Patterns.club_pattern]) == False]
 
+def time_media(time):
+    hours = time // 3600
+    minutes = (time % 3600) // 60
+    seconds = time % 60
+    formatted_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    return formatted_time
+
 def parse_time(time):
     try:
         now = datetime.now().replace(second=0, microsecond=0)
@@ -342,3 +356,43 @@ async def convert_img(inpt, output_name, convert_to):
     ipng = await Image.open(inpt).convert()
     await ipng.save(output_name, convert_to)
 
+async def download_image(url: str,path: str = None, peer=None):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                image_content = await response.read()
+                if path or peer:
+                    async with aiofiles.open("{}{}\{}".format(path,peer,random.randrange(1,100000)), "wb") as file:
+                        await file.write(image_content)
+                else : return image_content
+
+
+def calc_albums(obj):
+    offset_max = 0
+    parse_album = str(random.choice(obj)).split(sep='_')
+    if int(parse_album[1]) > 50: offset_max = math.floor(int(parse_album[1]) / 50)
+    Albums = NamedTuple('Albums', [('parse_album', list), ('offset_max', int)])
+    return Albums(parse_album,offset_max)
+
+
+async def get_sort_all_albums(api_obj):
+    listAlbum = []
+    items = api_obj.get('response', api_obj).get('items', None)
+    if items:
+        for item in items:
+            album = str(item['id'])
+            size = str(item['size'])
+            privacy = str(item['privacy_view'])
+            if re.compile("'all'").search(privacy): listAlbum.append(album + '_' + size)
+        return listAlbum
+
+def get_max_photo(obj):
+    try:
+        urls = [size.url for size in obj.photo.sizes]
+        types_ = [size.type.value for size in obj.photo.sizes]
+    except:
+        urls = [size['url'] for size in obj[0]['sizes']]
+        types_ = [size['type'] for size in obj[0]['sizes']]
+    max_size = sorted(types_, key=lambda x: size_values.index(x))[-1]
+    urldict = dict(zip(types_, urls))
+    return urldict.get(max_size)

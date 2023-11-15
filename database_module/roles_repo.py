@@ -10,12 +10,12 @@ class RoleRepository:
     
     async def check_roles(self):
         tR = await DynamicsTables(self.peer).tableRoles()
-        return await DBexec(rolesDB,select(tR.c.command)).dbselect('one')
+        return await DBexec(rolesDB,select(tR.c.command)).dbselect(DBexec.FETCH_ONE)
 
     async def get_roles(self,word_comm):
         tR = await DynamicsTables(self.peer).tableRoles()
         return await DBexec(rolesDB,select(tR.c.emoji_1, tR.c.txt, tR.c.emoji_2).where(
-                tR.c.command == word_comm)).dbselect("line")
+                tR.c.command == word_comm)).dbselect(DBexec.FETCH_LINE)
     
     async def create_role(self,args,msg,access):
         tR = await DynamicsTables(self.peer).tableRoles()
