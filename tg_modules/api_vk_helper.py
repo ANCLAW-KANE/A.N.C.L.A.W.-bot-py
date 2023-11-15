@@ -111,4 +111,6 @@ async def get_content(url: str):
             }
     async with ClientSession() as session:
             async with session.get(url,headers=headers) as f:
-                if f.ok:  return await f.read()
+                if f.ok:  
+                    logger.warning(f" data length: {f.content_length}")
+                    return await f.read()
