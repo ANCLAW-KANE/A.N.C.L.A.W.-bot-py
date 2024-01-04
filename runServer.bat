@@ -1,1 +1,0 @@
-%~dp0tgbot\Scripts\python.exe %~dp0anc\manage.py runserver

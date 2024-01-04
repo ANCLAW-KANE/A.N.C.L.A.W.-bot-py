@@ -1,4 +1,4 @@
-
+from database_module.peer_repo import PeerRepository
 from loguru import logger
 from tg_modules.tg_tools import get_data_markov,send_photo
 from sessions_tg import bot_aiogram
@@ -14,7 +14,7 @@ router = Router()
 @router.message(and_f(Command("g"),ChatTypeFilter(group_chat)))
 async def gen_text(msg: Message):
     g = await get_data_markov(msg.chat.id)
-    txt = await g.generate_text()
+    txt = await g.generate_text(custom=True)
     await bot_aiogram.send_message(msg.chat.id, txt)
 
 @router.message(and_f(Command("gd"),ChatTypeFilter(group_chat)))
@@ -27,7 +27,7 @@ async def gen_dem(msg: Message):
 @router.message(and_f(Command("gl"),ChatTypeFilter(group_chat)))
 async def gen_l_text(msg: Message):
     g = await get_data_markov(msg.chat.id)
-    txt = await g.generate_long_text()
+    txt = await g.generate_long_text(custom=True)
     if not txt: txt = "Мало данных для генерации"
     await msg.answer(txt)
 
@@ -52,6 +52,8 @@ async def settings_manager(msg: Message,command: CommandObject):
         'dl': (gen.set_gdl,(args,)),
         'stck': (gen.set_stck,(args,)),
         'show': (gen.show,()),
+        'state': (gen.set_state,(args,)),
+        'lstate': (gen.set_lstate,(args,)),
         None: (gen.help,())
     }
     key = g_set.get(setting)

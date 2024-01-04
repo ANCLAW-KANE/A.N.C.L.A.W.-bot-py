@@ -24,3 +24,5 @@ database_module/peer.db
 temps/
 services/1.jpg
 database_module/peer_roles.db
+.tgbot/
+.vkbot/

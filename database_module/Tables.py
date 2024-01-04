@@ -36,6 +36,8 @@ class Peers(BasePeer):
     g_dem = Column(autoincrement=False,type_=Integer())
     g_ldem = Column(autoincrement=False,type_=Integer())
     g_sticker = Column(autoincrement=False,type_=Integer())
+    g_text_state = Column(autoincrement=False,type_=Integer())
+    g_long_text_state = Column(autoincrement=False,type_=Integer())
     
 class HashAudio(BaseHash):
     __tablename__ = "hashaudio"

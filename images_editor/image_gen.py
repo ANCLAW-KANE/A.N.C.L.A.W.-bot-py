@@ -33,10 +33,10 @@ class Image_generator:
 
     async def _two_line_dem(self,background_image:Image.Image,font: ImageFont.FreeTypeFont):
         first_text_y = background_image.height - 165
-        first_text_width = 45
+        first_text_width = 50
         first_text_line = 2
         second_text_y = background_image.height - 89
-        second_text_width = 50
+        second_text_width = 60
         second_text_line = 2
         await draw_multiple_line_text(background_image, random.choice(self.text), font, 
                                       random.choice(colors).value, 
@@ -58,21 +58,19 @@ class Image_generator:
             background_image.paste(res_image, (x, set_y_height))
     
     async def gen(self)->bytes:
-        max_width = 1024 if isinstance(self.file, str) else 1678
-        size = 25 if isinstance(self.file, str) else 31
         if isinstance(self.file,str):
             max_width = 1024
-            size = 25
+            size = 38
         if isinstance(self.file,list):
             max_width = 1678
-            size = 31
+            size = 40
         background = Image.new("RGB", (max_width, 1024))
         resized_image = await multi_images(self,ord=839, new_height=724, indent=60, square=True)
         await self._paste_img_big_gen(resized_image=resized_image, set_y_height=100, step=30,
                                     background_image=background, max_width=max_width, ord=839)
         r = random.randint(0,2)
         if not isinstance(self.file,list) or not r == 0:
-            font = ImageFont.truetype("./fonts/better-vcr4.0.ttf", size=size)
+            font = ImageFont.truetype("./fonts/EBGaramondSC08-Regular.otf", size=size)
             if r == 1 or r == 0:
                 await self._one_line_dem(background,font)
             if r == 2:
@@ -87,7 +85,7 @@ class Image_generator:
         step = 50 #отступ изображений от середины
         width_line = 55 # длина строки
         num_line = 16 # количество строк
-        font = ImageFont.truetype("./fonts/better-vcr4.0.ttf", size=45)
+        font = ImageFont.truetype("./fonts/EBGaramondSC08-Regular.otf", size=65)
         text_y = background.height - (background.height - text_place_height - set_y_height) # с учетом отступа и изображения
         resized_image = await multi_images(self,new_height = new_height ,ord= 1024, indent = 100,square=square)
         color_text = color if color else random.choice(colors).value

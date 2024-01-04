@@ -37,7 +37,7 @@ async def process_stck(msg:Message):
         await  msg.answer(sticker_id=random.choice(stickers))
 
 async def process_txt(generator: Generator,msg:Message):
-    txt = await generator.generate_text()
+    txt = await generator.generate_text(custom=True)
     await  msg.answer(txt)
 
 async def sticker_add(msg: Message):

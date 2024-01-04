@@ -19,7 +19,9 @@ class PeerRepository:
                 g_txt = 0,
                 g_dem = 0,
                 g_ldem = 0,
-                g_sticker = 0
+                g_sticker = 0,
+                g_text_state = 1,
+                g_long_text_state = 1
             ).prefix_with('OR IGNORE')).dbedit()
         
     async def check_nick(self):
@@ -62,7 +64,9 @@ class PeerRepository:
             "g_txt": params.g_txt,
             "g_dem": params.g_dem,
             "g_ldem": params.g_ldem,
-            "g_stck": params.g_sticker
+            "g_stck": params.g_sticker,
+            "g_text_state" : params.g_text_state,
+            "g_long_text_state" : params.g_long_text_state
         }
         else:return None
 
@@ -78,6 +82,12 @@ class PeerRepository:
     async def g_stck(self,count):
         await DBexec(peerDB,update(Peers).where(Peers.peer_id == self.peer).values(g_sticker=count)).dbedit()
 
+    async def g_text_state(self,count):
+        await DBexec(peerDB,update(Peers).where(Peers.peer_id == self.peer).values(g_text_state=count)).dbedit()
+        
+    async def g_long_text_state(self,count):
+        await DBexec(peerDB,update(Peers).where(Peers.peer_id == self.peer).values(g_long_text_state=count)).dbedit()
+    
     async def check_id_mute(self,user):
         date_mute = await DBexec(peerDB,select(Mutes.data_end).where(
             Mutes.peer_id == self.peer, Mutes.user_id == user)).dbselect(DBexec.FETCH_ONE)

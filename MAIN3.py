@@ -10,12 +10,14 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from tg_modules.handlers import rout
 from sessions_tg import bot_aiogram
 from tg_modules.Middlewares import AddHistoryMiddleware
-from database_module.Tables import BaseHash , hashDB
+from database_module.Tables import BaseHash , hashDB, peerDB, BasePeer
  
 
 async def main():
     async with hashDB.begin() as connect:
         await connect.run_sync(BaseHash.metadata.create_all)
+    async with peerDB.begin() as conn:
+        await conn.run_sync(BasePeer.metadata.create_all)   
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_routers(*rout)
     dp.message.middleware(AddHistoryMiddleware())

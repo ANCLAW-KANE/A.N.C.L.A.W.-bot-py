@@ -20,7 +20,7 @@ router = Router()
 @router.callback_query(and_f(F.data == "g",ChatTypeFilter(group_chat)))
 async def gen(callback: CallbackQuery):
     g = await get_data_markov(callback.message.chat.id)
-    txt = await g.generate_text()
+    txt = await g.generate_text(custom=True)
     await callback.message.answer(txt)
 
 @router.callback_query(and_f(F.data == "gd",ChatTypeFilter(group_chat)))
@@ -33,7 +33,7 @@ async def gen_dem_(callback: CallbackQuery):
 @router.callback_query(and_f(F.data == "gl",ChatTypeFilter(group_chat)))
 async def gen_l_text_(callback: CallbackQuery):
     g = await get_data_markov(callback.message.chat.id)
-    txt = await g.generate_long_text()
+    txt = await g.generate_long_text(custom=True)
     if not txt: txt = "Мало данных для генерации"
     await callback.message.answer(txt)
 

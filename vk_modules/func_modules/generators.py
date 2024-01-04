@@ -16,11 +16,11 @@ class Generate:
     
     async def gen(self):
         g = await self._data()
-        self.send_msg.msg = await g.generate_text()
+        self.send_msg.msg = await g.generate_text(custom=True)
 
     async def lgen(self):
         g = await self._data()
-        txt = await g.generate_long_text() 
+        txt = await g.generate_long_text(custom=True) 
         if not txt: txt = "Мало данных для генерации"
         self.send_msg.msg = txt
 
