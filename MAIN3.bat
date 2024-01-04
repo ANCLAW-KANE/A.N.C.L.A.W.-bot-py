@@ -1,1 +1,1 @@
-%~dp0tgbot\Scripts\python.exe %~dp0MAIN3.py
+.\venvtgbot\.venv\Scripts\python.exe .\MAIN3.py

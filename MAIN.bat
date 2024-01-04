@@ -1,1 +1,1 @@
-.\.vkbot\.venv\Scripts\python.exe .\MAIN.py
+.\venvvkbot\.venv\Scripts\python.exe .\MAIN.py

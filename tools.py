@@ -8,7 +8,7 @@ import aiofiles
 import aiohttp
 from PIL import Image
 from CONFIG import config_file_json
-from zipstream import AioZipStream
+from zipstream.aiozipstream import AioZipStream
 from enums import Timestamp,size_values
 from loguru import logger
 from typing import NamedTuple
