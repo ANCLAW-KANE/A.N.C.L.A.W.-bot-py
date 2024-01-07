@@ -39,8 +39,7 @@ class PeerRepository:
             await DBexec(peerDB,insert(Nicknames).values(peer_id = self.peer, user_id = self.fromid, 
                     nickname = nick).prefix_with('OR IGNORE')).dbedit()
             
-    #async def get_count(self):
-    #    return await DBexec(peerDB,select(Peers.&&&&&).where(Peers.peer_id == self.peer)).dbselect("one")
+
     
     async def toggle_marry(self):
         return await DBmanager(peerDB, Peers, Peers.poligam_marry, Peers.peer_id == self.peer, ['Множественный брак разрешен',

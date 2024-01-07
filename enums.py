@@ -15,7 +15,12 @@ class Commands(Enum):
     words_list   = ('word', (1, 2),   'list')
 
     settings_wrq = ('word','role')
-    settings_count = 'count'
+    settings_gtext = 'text'
+    settings_gstck = 'stck'
+    settings_gdem = 'dem'
+    settings_gldem = 'ldem'
+    settings_gtxtstate = 'ts'
+    settings_gltxtstate = 'lts'
     settings_chat = 'chat'
     settings_marry = ('marry','брак')
     settings_words = 'words'

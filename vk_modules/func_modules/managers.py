@@ -41,12 +41,47 @@ class manager:
             if key : self.send_msg.msg = await key[0](*key[1])
 
     ######################################################################################################
-    async def count(self):
+    async def g_txt_set(self):
         if self.args_len == 2:
             if Patterns.pattern_bool(self.list_args[1],[Patterns.chance_pattern]):
-                #await PeerRepository(self.peer).toggle_count(self.list_args[1])
+                await PeerRepository(self.peer).g_txt(self.list_args[1])
                 self.send_msg.msg = f"Значение установлено на {self.list_args[1]}"
             else: self.send_msg.msg = f"Значение должно быть 0-100 (%)"
+
+    async def g_dem_set(self):
+        if self.args_len == 2:
+            if Patterns.pattern_bool(self.list_args[1],[Patterns.chance_pattern]):
+                await PeerRepository(self.peer).g_dem(self.list_args[1])
+                self.send_msg.msg = f"Значение установлено на {self.list_args[1]}"
+            else: self.send_msg.msg = f"Значение должно быть 0-100 (%)"
+            
+    async def g_ldem_set(self):
+        if self.args_len == 2:
+            if Patterns.pattern_bool(self.list_args[1],[Patterns.chance_pattern]):
+                await PeerRepository(self.peer).g_ldem(self.list_args[1])
+                self.send_msg.msg = f"Значение установлено на {self.list_args[1]}"
+            else: self.send_msg.msg = f"Значение должно быть 0-100 (%)"
+            
+    async def g_stck_set(self):
+        if self.args_len == 2:
+            if Patterns.pattern_bool(self.list_args[1],[Patterns.chance_pattern]):
+                await PeerRepository(self.peer).g_stck(self.list_args[1])
+                self.send_msg.msg = f"Значение установлено на {self.list_args[1]}"
+            else: self.send_msg.msg = f"Значение должно быть 0-100 (%)"
+            
+    async def g_text_state_set(self):
+        if self.args_len == 2:
+            if Patterns.pattern_bool(self.list_args[1],[Patterns.chance_pattern]):
+                await PeerRepository(self.peer).g_text_state(self.list_args[1])
+                self.send_msg.msg = f"Значение установлено на {self.list_args[1]}"
+            else: self.send_msg.msg = f"Значение должно быть 0-100 (с большим значением меньше шанс удачной генерации, рекомендуемое значение 1-3)"
+            
+    async def g_long_text_state_set(self):
+        if self.args_len == 2:
+            if Patterns.pattern_bool(self.list_args[1],[Patterns.chance_pattern]):
+                await PeerRepository(self.peer).g_long_text_state(self.list_args[1])
+                self.send_msg.msg = f"Значение установлено на {self.list_args[1]}"
+            else: self.send_msg.msg = f"Значение должно быть 0-100 (с большим значением меньше шанс удачной генерации, рекомендуемое значение 1-3)"
 
     ######################################################################################################
     async def show_settings(self):
@@ -55,6 +90,11 @@ class manager:
             for key in opt: opt[key] = Formatter.emojy_format(opt[key])
         self.send_msg.msg = f"🆔 : {opt['peer_id']} \n " \
                        f"🎚 Частота генерации текста: {opt['g_txt']}\n"\
+                       f"🎚 Частота отправки стикера: {opt['g_stck']}\n"\
+                       f"🎚 Частота генерации демки: {opt['g_dem']}\n"\
+                       f"🎚 Частота генерации большлй демки: {opt['g_ldem']}\n"\
+                       f"🎚 txt-set: {opt['g_text_state']}\n"\
+                       f"🎚 ltxt-set: {opt['g_long_text_state']}\n"\
                        f"💕💯 полигамные браки: {opt['poligam_marry']}\n"\
                        f"📑 Вывод шаблонов(слова): {opt['words']}\n"\
     

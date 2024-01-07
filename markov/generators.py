@@ -23,7 +23,6 @@ class Generator:
 
     async def generate_text(self, size=MAX_MSG_LENGTH, state=1, split=False,custom=False) -> str:
         if custom:
-            print("::::::::::::::::::::::::::::CUSTOM:::::::::::::::::::::::::::::::::::;;")
             state = (await PeerRepository(self.obj).get_params_peer())['g_text_state']
         text = "\n".join(self.msg) if not split else random.choices(self.msg, k=360)
         text_model = markovify.NewlineText(
@@ -52,7 +51,6 @@ class Generator:
         if len(self.msg) < 500:
             return None
         if custom:
-            print("::::::::::::::::::::::::::::CUSTOM LONG:::::::::::::::::::::::::::::::::::;;")
             state_size = (await PeerRepository(self.obj).get_params_peer())['g_long_text_state']
         text_models = [
             markovify.Text(

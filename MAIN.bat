@@ -1,12 +1,18 @@
-poetry config virtualenvs.path "C:\\Users\\venvs"
+@echo off
+set "searchPath=C:\Users\venvs\"
+set "mask=venvvkbot-"
+poetry config virtualenvs.path "%searchPath%"
 poetry config virtualenvs.in-project false
 cd .\venvvkbot\
+echo ________________________ Installing ________________________
 poetry install
-
-@REM заменить на имя окружения из C:\Users\venvs
-set tgbotvenvname=venvvkbot-LAmQ-QDi-py3.11
-
-set pathvenvtg=C:\Users\venvs\%tgbotvenvname%\Scripts\python.exe
-poetry env use %pathvenvtg%
+dir "%searchPath%" /b | find "%mask%" > temp_vk.txt
+for /f "tokens=*" %%f in (temp_vk.txt) do (
+    set "vkbotvenvname=%%f"
+)
+del temp_vk.txt
+set pathvenvvk=C:\Users\venvs\%vkbotvenvname%\Scripts\python.exe
+poetry env use %pathvenvvk%
 cd ..
-%pathvenvtg% MAIN.py
+echo ___________________________ Run ___________________________
+%pathvenvvk% MAIN.py

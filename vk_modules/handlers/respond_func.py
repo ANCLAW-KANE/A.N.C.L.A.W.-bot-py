@@ -37,7 +37,12 @@ class Respondent_command(ExtendParams,String_parse,NameBuilder,Administration,Fu
     async def manager_f(self):
         arg2 = {
                 Commands.settings_wrq.value: self.builder_data,
-                Commands.settings_count.value: self.count,
+                Commands.settings_gtext.value: self.g_txt_set,
+                Commands.settings_gstck.value: self.g_stck_set,
+                Commands.settings_gdem.value: self.g_dem_set,
+                Commands.settings_gldem.value: self.g_ldem_set,
+                Commands.settings_gtxtstate.value: self.g_text_state_set,
+                Commands.settings_gltxtstate.value: self.g_long_text_state_set,
                 Commands.settings_chat.value: self.show_settings,
                 Commands.settings_marry.value: self.marry_toggle,
                 Commands.settings_words.value: self.toggle_word,
