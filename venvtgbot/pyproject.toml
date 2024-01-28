@@ -6,7 +6,7 @@ authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.10,<3.11.0 || >3.11.0,<4.0"
 aiofiles = "23.2.1"
 aiogram = "3.3.0"
 aiohttp = "3.9.1"
@@ -107,7 +107,22 @@ zipp = "3.17.0"
 zipstream = "1.1.4"
 zope-event = "5.0"
 zope-interface = "6.1"
+asyncpg = "^0.29.0"
+sqlalchemy-utils = "^0.41.1"
+numba = "^0.58.1"
+pilmoji = "^2.0.4"
 
+
+[tool.poetry.group.dev.dependencies]
+snakeviz = "^2.2.0"
+py-spy = "^0.3.14"
+jupyter = "^1.0.0"
+scalene = "^1.5.31.1"
+pyinstrument = "^4.6.1"
+line-profiler = "^4.1.2"
+pympler = "^1.0.1"
+aiomonitor = "^0.7.0"
+pymem = "^1.13.1"
 
 [build-system]
 requires = ["poetry-core"]

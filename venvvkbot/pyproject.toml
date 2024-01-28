@@ -98,6 +98,7 @@ zipp = "3.17.0"
 zipstream = "1.1.4"
 zope-event = "5.0"
 zope-interface = "6.1"
+asyncpg = "^0.29.0"
 
 
 [build-system]

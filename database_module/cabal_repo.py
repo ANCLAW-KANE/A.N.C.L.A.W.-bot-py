@@ -1,8 +1,8 @@
 
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import delete, select, update
 from database_module.Tables import DBexec, DBmanager, Nodes, Peers,peerDB
 from tools import Formatter, Patterns
-
+from sqlalchemy.dialects.postgresql import insert
 
 class CabalRepository:
 
@@ -31,8 +31,11 @@ class CabalRepository:
     async def create_node(self,values,msg):
         if values and len(values) == 4 and Patterns.pattern_bool(values[2],[Patterns.chat_id_pattern])\
         and Patterns.pattern_bool(values[3],[Patterns.id_telegram_chat_pattern]):
-            await DBexec(peerDB,insert(Nodes).values(peer_id=values[2], tg_id=values[3],
-                                        tg_vk_allow=1 ,vk_tg_allow=1).prefix_with('OR IGNORE')).dbedit()
+            await DBexec(peerDB,insert(Nodes)
+                            .values(peer_id=values[2], tg_id=values[3],
+                                tg_vk_allow=1 ,vk_tg_allow=1)
+                            .on_conflict_do_nothing()
+                        ).dbedit()
             return msg
         else: return "Операция не выполнена, проверьте аргументы."
 

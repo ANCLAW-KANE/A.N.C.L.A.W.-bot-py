@@ -1,11 +1,12 @@
 import random
-import time
+from time import time
 
 from loguru import logger
 from database_module.markov_repo import MarkovRepository
 from markov.generators import Generator
 from sessions_tg import bot_aiogram
 from aiogram.types import BufferedInputFile
+
 
 async def get_max_photo_id(photos):
     ids = [idfile.file_id for idfile in photos]
@@ -14,16 +15,19 @@ async def get_max_photo_id(photos):
     urldict = dict(zip(sizes, ids))
     return urldict.get(max_size)
 
+
 async def get_data_markov(chat):
     mRepo = MarkovRepository(chat)
     return Generator(msg = await mRepo.get_history(),obj=chat)
 
+
 async def send_photo(chat,img,mode,obj = bot_aiogram):
-    start_time = time.time()
+    start_time = time()
     buff = BufferedInputFile(img,str(random.randint(1,1000000)))
     await obj.send_photo(chat, buff)
-    end_time = time.time()
+    end_time = time()
     logger.warning(f"{mode} :upl: {end_time - start_time}")
+
 
 def page_toggle(obj):
     page = int(obj.page)

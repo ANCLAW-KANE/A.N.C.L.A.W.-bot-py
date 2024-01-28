@@ -16,3 +16,4 @@ poetry env use %pathvenvvk%
 cd ..
 echo ___________________________ Run ___________________________
 %pathvenvvk% MAIN.py
+pause

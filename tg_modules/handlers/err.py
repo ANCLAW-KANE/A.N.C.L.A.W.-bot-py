@@ -8,10 +8,12 @@ from loguru import logger
 
 router = Router()
 
+
 @router.error(ExceptionTypeFilter(TelegramAPIError))
 async def error_handler(event: TelegramAPIError):
     logger.error(f"Critical error caused by {event}")
     pass
+
 
 @router.error()
 async def error_handler(event: ErrorEvent):

@@ -1,6 +1,7 @@
 from database_module.Tables import DynamicsTables, wordsDB,DBexec,Executor_with_access,strings
-from sqlalchemy import select, insert, delete, update
+from sqlalchemy import select, delete, update
 from tools import Formatter,check_index
+from sqlalchemy.dialects.postgresql import insert
 
 class WordRepository:
 
@@ -21,8 +22,10 @@ class WordRepository:
     
     async def add_word(self,words,msg,access):
         tw = await DynamicsTables(self.peer).tableWords()
-        if words and len(words) == 3: return await Executor_with_access(wordsDB, insert(tw).values(
-            key=words[1],val=words[2]).prefix_with('OR IGNORE'),self.fromid,msg,access).exec()
+        if words and len(words) == 3: return await Executor_with_access(wordsDB, insert(tw)
+                    .values(key=words[1],val=words[2])
+                    .on_conflict_do_nothing(),self.fromid,msg,access
+                ).exec()
         else: return "Операция не выполнена, проверьте аргументы."
 
     async def del_word(self,ids,msg,access):

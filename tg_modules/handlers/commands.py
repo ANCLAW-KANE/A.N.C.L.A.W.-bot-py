@@ -14,7 +14,9 @@ from tg_modules.states import Audio
 from tg_modules.handlers.keyboard import ReplyKeyboards,InlineKeyboards,DataKeyboards,PageManager
 from CONFIG import tr_chat
 
+
 router = Router()
+
 
 @router.message(Command("mem"))
 async def mem(msg: Message):
@@ -26,32 +28,39 @@ async def mem(msg: Message):
             await bot_aiogram.send_photo(msg.chat.id, buff)
     except: msg.answer("Ошибка, повторите запрос")
 
+
 @router.message(and_f(Command("menu"),ChatTypeFilter(group_chat)))
 async def menu(msg: Message):
     await bot_aiogram.send_message(chat_id=msg.chat.id, text='Списки комманд', reply_markup=InlineKeyboards.gen_chat_kb())
 
+
 @router.message(and_f(Command("menu"),ChatTypeFilter(private)))
 async def menu(msg: Message):
     await bot_aiogram.send_message(chat_id=msg.chat.id, text='Списки комманд', reply_markup=InlineKeyboards.gen_private_kb())
+
 
 @router.message(and_f(Command("openkb"),ChatTypeFilter(group_chat)))
 async def open_kb(msg: Message):
     kb = ReplyKeyboards.gen_kb_menu_chat_tr() if msg.chat.id == tr_chat else ReplyKeyboards.gen_kb_menu_chat()
     await bot_aiogram.send_message(chat_id=msg.chat.id, text='Клавиатура включена', reply_markup=kb)
 
+
 @router.message(and_f(Command("openkb"),ChatTypeFilter(private)))
 async def open_kb(msg: Message):
     kb = ReplyKeyboards.gen_kb_menu_private()
     await bot_aiogram.send_message(chat_id=msg.chat.id, text='Клавиатура включена', reply_markup=kb)
 
+
 @router.message(Command("closekb"))
 async def close_kb(msg: Message):
     await bot_aiogram.send_message(chat_id=msg.chat.id, text='Клавиатура выключена', reply_markup=ReplyKeyboardRemove())
+
 
 @router.message(and_f(Command("music"),ChatTypeFilter(private)))
 async def find_music(msg: Message,state: FSMContext):
     await state.set_state(Audio.name)
     await msg.answer("Введите исполнителя или имя трека")
+
 
 
 @router.message(and_f(Audio.name,ChatTypeFilter(private)))

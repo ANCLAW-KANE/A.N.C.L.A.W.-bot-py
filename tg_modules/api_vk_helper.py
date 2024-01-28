@@ -1,8 +1,8 @@
 from hashlib import md5
-import random,json
+import random
+from json import dump
 from loguru import logger
-from time import sleep
-import time
+from time import sleep, time
 from aiovk.api import API
 from aiovk.sessions import TokenSession,VkCaptchaNeeded
 from CONFIG import vktokenUser,full_permission_user_token
@@ -12,6 +12,7 @@ from database_module.operations_repo import add_data_hash_audio
 
 
 OWNER_ALBUM_PHOTO = json_config().read_key('sys','OWNER_ALBUM_PHOTO')
+
 
 async def api_request(token,method,**params):
     try:
@@ -25,6 +26,7 @@ async def api_request(token,method,**params):
         print(c)
     return response
 
+
 async def get_list_album(method,params,token,v):
     url = f"https://api.vk.com/method/{method}?{Formatter.DictClass.dict_to_str(params, '=','&')}&access_token={token}&v={v}"
     async with ClientSession() as session:
@@ -34,9 +36,11 @@ async def get_list_album(method,params,token,v):
     sort = await get_sort_all_albums(api_obj=alb_ph)
     return sort
 
+
 async def get_url_photo(photo):
     photo = await api_request(token=vktokenUser,method='photos.getById',photos=photo)
     return get_max_photo(photo)
+
 
 async def get_photos(src):
     photoList = []
@@ -46,6 +50,7 @@ async def get_photos(src):
     for photo in alb_ph['items']:  photoList.append(str(photo['id']))
     return photoList
 
+
 async def get_images_from_vk():
     list_a = await get_list_album(
         'photos.getAlbums',
@@ -53,14 +58,16 @@ async def get_images_from_vk():
         full_permission_user_token,
         '5.131'
     )
+    print(list_a)
     alb = calc_albums(list_a)
     if alb.parse_album[1] != '0':
         alb_ph = await get_photos(alb)
         if alb_ph: return await get_url_photo(f"{str(OWNER_ALBUM_PHOTO)}_{random.choice(alb_ph)}")
             
-            
+       
+
 async def get_audio(q:str,json_hash_name:str):
-    start_time = time.time()
+    start_time = time()
     data_pack = []
     data_pack_hash = []
     for block in range(2):
@@ -89,12 +96,13 @@ async def get_audio(q:str,json_hash_name:str):
             data_pack.extend(data)
     if not data_pack and not data_hash:
         return None
-    with open(f'temps/{json_hash_name}.json','w') as f: json.dump(data_pack,f)
+    with open(f'temps/{json_hash_name}.json','w') as f: dump(data_pack,f)
     await add_data_hash_audio(data_pack_hash)
-    end_time = time.time()
+    end_time = time()
     logger.warning(f" :find audio vk: {end_time - start_time}")
     return data_pack
     
+
 
 async def get_content(url: str):
     userAgent = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Mobile Safari/537.36'

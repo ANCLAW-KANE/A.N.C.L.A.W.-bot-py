@@ -1,5 +1,7 @@
-import textwrap
+from textwrap import wrap
 from PIL import Image, ImageDraw, ImageFont
+from pilmoji import Pilmoji
+from pilmoji.source import MicrosoftEmojiSource
 
 
 async def draw_multiple_line_text(
@@ -13,11 +15,11 @@ async def draw_multiple_line_text(
     stroke_width=None,
     stroke_fill=None,
 ):
-    draw = ImageDraw.Draw(image)
+    #draw = ImageDraw.Draw(image)
     image_width, _ = image.size
     line_spacing = 10
     y_text = text_start_height + line_spacing  # начальная точка для текста
-    lines = textwrap.wrap(text, width=width_text, max_lines=max_lines)
+    lines = wrap(text, width=width_text, max_lines=max_lines)
     for line in lines:
         font_size = font.size  # начальный размер шрифта
         while font_size > 0:
@@ -26,14 +28,15 @@ async def draw_multiple_line_text(
             line_width = bbox[2] - bbox[0]
             line_height = bbox[3] - bbox[1]
             if line_width <= image_width:
-                draw.text(
-                    ((image_width - line_width) / 2, y_text),
-                    line,
-                    font=font,
-                    fill=text_color,
-                    stroke_width=stroke_width,
-                    stroke_fill=stroke_fill,
-                )
+                with Pilmoji(image=image,source=MicrosoftEmojiSource) as draw:
+                    draw.text(
+                        xy=(int((image_width - line_width) / 2), y_text),
+                        text=line,
+                        font=font,
+                        fill=text_color,
+                        stroke_width=stroke_width,
+                        stroke_fill=stroke_fill,
+                    )
                 break
             font_size -= 1
         y_text += line_height + line_spacing
@@ -57,7 +60,7 @@ async def draw_multiple_line_text_in_textbox(
     char_width = char_size[2] - char_size[0]
     max_chars_per_line = max_width // char_width  # макс длинна
     #   максимальное количество строк
-    lines = textwrap.wrap(text, width=max_chars_per_line)
+    lines = wrap(text, width=max_chars_per_line)
     line_spacing = 12  # отступы между строк
     text_height = 0
     for line in lines:

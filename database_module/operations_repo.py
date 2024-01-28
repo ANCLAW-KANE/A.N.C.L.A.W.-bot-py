@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select
+from sqlalchemy import select
 from database_module.Tables import DBexec,hashDB,HashAudio
 
 async def add_data_hash_audio(data):

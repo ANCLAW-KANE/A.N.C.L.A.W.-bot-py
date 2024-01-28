@@ -23,3 +23,6 @@ database_module/peer_words.db
 database_module/peer.db
 temps/
 database_module/peer_roles.db
+*memray*
+*profile*
+

@@ -1,6 +1,7 @@
 from database_module.Tables import DynamicsTables, rolesDB,DBexec,Executor_with_access,strings
-from sqlalchemy import select, insert, delete, update
+from sqlalchemy import select, delete, update
 from tools import Formatter,check_index
+from sqlalchemy.dialects.postgresql import insert
 
 class RoleRepository:
 
@@ -20,8 +21,11 @@ class RoleRepository:
     async def create_role(self,args,msg,access):
         tR = await DynamicsTables(self.peer).tableRoles()
         if args and len(args) == 5:
-            return await Executor_with_access(rolesDB,insert(tR).values(command=args[1].lower(),emoji_1=args[2],txt=args[3],
-                            emoji_2=args[4]).prefix_with('OR IGNORE'),self.fromid,msg,access).exec()
+            return await Executor_with_access(rolesDB,insert(tR)
+                        .values(command=args[1].lower(),emoji_1=args[2],txt=args[3],emoji_2=args[4])
+                        .on_conflict_do_nothing(),
+                        self.fromid,msg,access
+                    ).exec()
         else: return strings['update_roles']
         
     async def del_role(self,ids,msg,access):

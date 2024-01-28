@@ -1,7 +1,7 @@
 from database_module.Tables import peerDB, DBexec , Marry, Peers
-from sqlalchemy import select, and_, or_, delete, insert, update
+from sqlalchemy import select, and_, or_, delete, update
 from itertools import chain
-
+from sqlalchemy.dialects.postgresql import insert
 
 class MarryRepository:
 
@@ -72,9 +72,12 @@ class MarryRepository:
             or_(Marry.man1 == self.fromid,Marry.man2 == self.fromid)))).dbedit()
 
     async def create_new_marry(self,selfid,m1,m2):
-        await DBexec(peerDB,insert(Marry).values(peer_id = self.peer,man1 = self.fromid,
-                                man2 = selfid, man1name = m1, man2name = m2,
-                                allow = 0, await_state = 1).prefix_with('OR IGNORE')).dbedit()
+        await DBexec(peerDB,insert(Marry)
+                    .values(peer_id = self.peer,man1 = self.fromid,
+                        man2 = selfid, man1name = m1, man2name = m2,
+                        allow = 0, await_state = 1)
+                    .on_conflict_do_nothing()
+                ).dbedit()
 
     async def unmarry_fromid(self,selfid):
         await DBexec(peerDB, delete(Marry).where(and_(Marry.peer_id == self.peer, or_(

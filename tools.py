@@ -1,20 +1,23 @@
-﻿
+﻿import random, json , pickledb, aiofiles
 from datetime import datetime, timedelta
 from functools import reduce
 from itertools import chain
-import json, random, string, os, pickledb,re,glob
-import math
-import aiofiles
-import aiohttp
+from os import listdir , path
+from re import findall , compile
+from glob import glob
+from math import floor
+from aiohttp import ClientSession
 from PIL import Image
 from CONFIG import config_file_json
 from zipstream.aiozipstream import AioZipStream
-from enums import Timestamp,size_values
+from enums import size_values, Timestamp
 from loguru import logger
 from typing import NamedTuple
 
 ############################################################################
 
+
+    
 class Patterns:
     user_pattern =   r"\[id(\d+)\|(@?[^\]]+)\]"
     club_pattern = r"\[club(\d+)\|(@?[^\]]+)\]"
@@ -26,7 +29,7 @@ class Patterns:
     def pattern_bool(text,patterns,logic="and")-> bool:
         bools = []
         for pattern in patterns:
-            matches = re.findall(pattern, text)
+            matches = findall(pattern, text)
             if matches: bools.append(matches)
         if len(bools) > 0:
             if logic == "and": return all(bools)
@@ -34,8 +37,8 @@ class Patterns:
         else: return False
 
     def get_mentions(text):
-        user_matches = re.findall(Patterns.user_pattern, text)
-        club_matches = re.findall(Patterns.club_pattern, text)  
+        user_matches = findall(Patterns.user_pattern, text)
+        club_matches = findall(Patterns.club_pattern, text)  
         if user_matches == [] and club_matches == []:
             return None
         else:
@@ -105,13 +108,13 @@ class Formatter():
 class Writer:
 
     async def find_file(path):
-        return glob.glob(path)
+        return glob(path)
 
     def create_list_zip(dir):
         listzip = []
-        for f in os.listdir(dir):
-            fp = os.path.join(dir, f)
-            if os.path.isfile(fp):
+        for f in listdir(dir):
+            fp = path.join(dir, f)
+            if path.isfile(fp):
                 listzip.append({'file': fp})
         return listzip
     
@@ -156,7 +159,7 @@ class json_config:
         self.db = pickledb.load(location=self.name,auto_dump=True, sig=True)
     
     def create(self,dir="sys"):
-        if not os.path.isfile(self.name):
+        if not path.isfile(self.name):
             self.db.set(dir, self.sys)
 
     def read_key(self,dir,key):
@@ -181,41 +184,6 @@ class json_config:
 
 ######################################################################################################################
 
-
-class FSM(object):
-
-    def __init__(self, obj, target):
-        self.obj = str(obj)
-        self.target = str(target)
-        self.field = f"{self.obj}_{self.target}"
-
-    def get_state(self,obj):
-        print(self.field)
-        db = pickledb.load("states.db", False)
-        try:
-            return db[self.field]
-        except KeyError:
-            return obj.NULL.value
-
-
-    def set_state(self, value):
-        db = pickledb.load("states.db", False)
-        try:
-            db[self.field] = str(value)
-            db.dump()
-            return True
-        except:
-            return False
-
-    def check_state(self):
-        z = self.get_state()
-        print(1, z)
-        # print(States_cook)
-        # if z[0] in States_cook:
-        #    print(z[1])
-        #    return z[1]
-
-############################################################################
 class data_msg:
     def __init__(self, msg: str = None, attachment: str = None, _reply: str = None, keyboard: str = None):
         self.msg = msg
@@ -347,17 +315,12 @@ def check_dict_key(dictonary,keyword):
         return value
     else: return None
 
-def gen_r_s(l):
-    letters = string.ascii_lowercase
-    rand_string = ''.join(random.choice(letters) for _ in range(l))
-    print("Random string of length ", l, " is: ", rand_string)
-
 async def convert_img(inpt, output_name, convert_to):
     ipng = await Image.open(inpt).convert()
     await ipng.save(output_name, convert_to)
 
 async def download_image(url: str,path: str = None, peer=None):
-    async with aiohttp.ClientSession() as session:
+    async with ClientSession() as session:
         async with session.get(url) as response:
             if response.status == 200:
                 image_content = await response.read()
@@ -370,7 +333,7 @@ async def download_image(url: str,path: str = None, peer=None):
 def calc_albums(obj):
     offset_max = 0
     parse_album = str(random.choice(obj)).split(sep='_')
-    if int(parse_album[1]) > 50: offset_max = math.floor(int(parse_album[1]) / 50)
+    if int(parse_album[1]) > 50: offset_max = floor(int(parse_album[1]) / 50)
     Albums = NamedTuple('Albums', [('parse_album', list), ('offset_max', int)])
     return Albums(parse_album,offset_max)
 
@@ -383,7 +346,7 @@ async def get_sort_all_albums(api_obj):
             album = str(item['id'])
             size = str(item['size'])
             privacy = str(item['privacy_view'])
-            if re.compile("'all'").search(privacy): listAlbum.append(album + '_' + size)
+            if compile("'all'").search(privacy): listAlbum.append(album + '_' + size)
         return listAlbum
 
 def get_max_photo(obj):

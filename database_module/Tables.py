@@ -1,18 +1,44 @@
-from sqlalchemy import Integer, Column, MetaData, Text, UniqueConstraint, Table, delete, select, update, DateTime
-from sqlalchemy.ext.asyncio import create_async_engine,AsyncSession
-from sqlalchemy.exc import ObjectNotExecutableError,DBAPIError
+from loguru import logger
+from sqlalchemy import Integer, Column, MetaData, Text, UniqueConstraint, Table, select, update, DateTime , inspect, BigInteger
+from sqlalchemy.ext.asyncio import create_async_engine,AsyncSession,AsyncEngine
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 from typing import Union , Any , List
 
+from asyncpg import create_pool , DuplicateDatabaseError
+
+"""
+connection_params = {
+        "user": "postgres", 
+        "password": "12345678", 
+        "host": "127.0.0.1",
+        "port": "5498" 
+    } #linux
+
+"""
+connection_params = {
+        "user": "root", 
+        "password": "1234", 
+        "host": "127.0.0.1",
+        "port": "5432" 
+    } #windows
 
 
-path = 'sqlite+aiosqlite:///database_module/'
+path = f"postgresql+asyncpg://{connection_params['user']}:"\
+    f"{connection_params['password']}@{connection_params['host']}:{connection_params['port']}/"
+main_engine = create_async_engine(path)
 
-peerDB = create_async_engine(f'{path}peer.db')
-hashDB = create_async_engine(f'{path}hash.db')
-rolesDB = create_async_engine(f'{path}peer_roles.db')
-wordsDB = create_async_engine(f'{path}peer_words.db')
-markovDB = create_async_engine(f'{path}peer_texts_markov.db')
+peer = 'peer'
+hash = 'hash'
+peer_roles = 'peer_roles'
+peer_words = 'peer_words'
+peer_texts_markov = 'peer_texts_markov'
+
+peerDB = create_async_engine(f'{path}peer',pool_size=40, max_overflow=10,echo=False)
+hashDB = create_async_engine(f'{path}hash',pool_size=40, max_overflow=10,echo=False)
+rolesDB = create_async_engine(f'{path}peer_roles',pool_size=40, max_overflow=10,echo=False)
+wordsDB = create_async_engine(f'{path}peer_words',pool_size=40, max_overflow=10,echo=False)
+markovDB = create_async_engine(f'{path}peer_texts_markov',pool_size=40, max_overflow=10,echo=False)
 
 BasePeer = declarative_base()
 BaseHash = declarative_base()
@@ -25,7 +51,7 @@ mdMarkov = MetaData()
 class Peers(BasePeer):
     __table_args__ = {'extend_existing': True}
     __tablename__ = "peers"
-    peer_id = Column(autoincrement=False,primary_key=True,type_=Integer())
+    peer_id = Column(autoincrement=False,primary_key=True,type_=BigInteger())
     e_g_mute = Column(autoincrement=False,type_=Integer())
     e_g_head = Column(autoincrement=False,type_=Integer())
     e_g_ex = Column(autoincrement=False,type_=Integer())
@@ -47,17 +73,17 @@ class HashAudio(BaseHash):
 
 class Nodes(BasePeer):
     __tablename__ = "nodes"
-    peer_id = Column(autoincrement=False,primary_key=True,type_=Integer())
-    tg_id = Column(autoincrement=False,type_=Integer())
+    peer_id = Column(autoincrement=False,primary_key=True,type_=BigInteger())
+    tg_id = Column(autoincrement=False,type_=BigInteger())
     vk_tg_allow = Column(autoincrement=False,type_=Integer())
     tg_vk_allow = Column(autoincrement=False,type_=Integer())
 
 class Marry(BasePeer):
     __tablename__ = "marry"
     id = Column(primary_key=True,type_=Integer(),autoincrement=True)
-    peer_id = Column(autoincrement=False,type_=Integer())
-    man1 = Column(autoincrement=False,type_=Integer())
-    man2 = Column(autoincrement=False,type_=Integer())
+    peer_id = Column(autoincrement=False,type_=BigInteger())
+    man1 = Column(autoincrement=False,type_=BigInteger())
+    man2 = Column(autoincrement=False,type_=BigInteger())
     man1name = Column(type_=Text())
     man2name = Column(type_=Text())
     allow = Column(autoincrement=False,type_=Integer())
@@ -66,15 +92,15 @@ class Marry(BasePeer):
 class Nicknames(BasePeer):
     __tablename__ = "nicknames"
     id = Column(primary_key=True,type_=Integer(),autoincrement=True)
-    peer_id = Column(autoincrement=False,type_=Integer())
-    user_id = Column(autoincrement=False,type_=Integer())
+    peer_id = Column(autoincrement=False,type_=BigInteger())
+    user_id = Column(autoincrement=False,type_=BigInteger())
     nickname = Column(type_=Text())
 
 class Mutes(BasePeer):
     __tablename__ = "mutes"
     id = Column(primary_key=True,type_=Integer(),autoincrement=True)
-    peer_id = Column(autoincrement=False,type_=Integer())
-    user_id = Column(autoincrement=False,type_=Integer())
+    peer_id = Column(autoincrement=False,type_=BigInteger())
+    user_id = Column(autoincrement=False,type_=BigInteger())
     data_end = Column(type_=DateTime())
 
 ##########################################################################################################################
@@ -91,30 +117,33 @@ class DynamicsTables():
             extend_existing=True
         )
     
-    async def tableRoles(self):# разобраться с автоинк
+    async def tableRoles(self):
         return Table(self.peer,mdRoles,
             Column(name='id', type_=Integer(), primary_key=True,autoincrement=True),
             Column(name='command', type_=Text(), unique=True,autoincrement=False),
             Column(name='emoji_1', type_=Text()),
             Column(name='txt', type_=Text()),
             Column(name='emoji_2', type_=Text()),
-            UniqueConstraint('id', 'command', name='new_pk'),
+            UniqueConstraint('id', 'command', name=f'new_pk_{self.peer}'),
             extend_existing=True
         )
     
 
+    
     async def tableMarkov(self):
         return Table(self.peer,mdMarkov,
-            Column(name='txt', type_=Text(),primary_key=True,autoincrement=False),
+            Column(name='id',type_=BigInteger(),primary_key=True,autoincrement=True),
+            Column(name='txt', type_=Text()),
             extend_existing=True
-        )
-    
-async def check_exist_table(bind,peer,meta):
+            )
+        #__table_args__ = (db.Index('ix_post_tags', tags, postgresql_using="gin"),
+
+async def check_exist_table(bind:AsyncEngine,peer,meta:Table):
     async with bind.begin() as connect: 
-        try:
-            await connect.execute(f"SELECT 1 FROM {peer} LIMIT 1")
-        except ObjectNotExecutableError:
+        if not await connect.run_sync(lambda sync_conn: inspect(sync_conn).has_table(peer)):
+            logger.success(f"Create table {peer} for {bind.name}")
             await connect.run_sync(meta.metadata.create_all,checkfirst=True)
+
 
 async def create_peer_table(peer: str):
     if not isinstance(peer, str):
@@ -126,6 +155,15 @@ async def create_peer_table(peer: str):
     await check_exist_table(rolesDB,peer,mdR)
     await check_exist_table(markovDB,peer,mdM)
 
+async def create_database(db:list):
+    async with create_pool(**connection_params) as pool:
+        async with pool.acquire() as connection:
+            for db_name in db:
+                try:
+                    await connection.execute(f"CREATE DATABASE {db_name}")
+                    logger.success(f"Database {db_name} created")
+                except DuplicateDatabaseError:
+                    logger.success(f"Database {db_name} exists - OK")
 
 ###################################################### TOOLS ###############################################################
 
@@ -139,6 +177,7 @@ class DBexec():
             sessionmaker(bind=bind,class_=AsyncSession, expire_on_commit=False, autoflush=True))()
         self.query = query
 
+    
     async def dbselect(self,fetch=FETCH_ALL):
         """
         fetch : 
@@ -147,18 +186,21 @@ class DBexec():
             FETCH_LINE запрос на список параметров,
         """ 
         async with self.session as s:
+            s : scoped_session
             async with s.begin_nested():
                 query = await s.execute(self.query)
-                if fetch == DBexec.FETCH_ONE:
+                if fetch == DBexec.FETCH_ALL:
+                    result = query.fetchall()
+                elif fetch == DBexec.FETCH_ONE:
                     try: result = query.fetchone()[0]
-                    except: result = None##
+                    except IndexError : result = None##
                 elif fetch == DBexec.FETCH_LINE:
                     result = query.fetchone()
-                elif fetch == DBexec.FETCH_ALL:
-                    result = query.fetchall()
-            await s.close()
+                
+            #await s.close()
         return result
-    
+
+
     async def dbedit(self):
         async with self.session as s:
             async with s.begin_nested():
@@ -169,7 +211,7 @@ class DBexec():
                 else:
                     await s.execute(self.query)
                     await s.commit()
-        await s.close()
+        #await s.close()
 ##########################################################################################################################
 
 class DBmanager:

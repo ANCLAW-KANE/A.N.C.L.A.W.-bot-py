@@ -9,13 +9,16 @@ from markov.generator_settings_manager import GenerateSettings
 from aiogram.filters.logic import and_f
 from tg_modules.handlers.filters import ChatTypeFilter,group_chat
 
+
 router = Router()
+
 
 @router.message(and_f(Command("g"),ChatTypeFilter(group_chat)))
 async def gen_text(msg: Message):
     g = await get_data_markov(msg.chat.id)
     txt = await g.generate_text(custom=True)
     await bot_aiogram.send_message(msg.chat.id, txt)
+
 
 @router.message(and_f(Command("gd"),ChatTypeFilter(group_chat)))
 async def gen_dem(msg: Message):
@@ -24,12 +27,14 @@ async def gen_dem(msg: Message):
     if img:  await send_photo(msg.chat.id,img,'gd')
     else : await msg.answer('Нет изображений в базе данных')
 
+
 @router.message(and_f(Command("gl"),ChatTypeFilter(group_chat)))
 async def gen_l_text(msg: Message):
     g = await get_data_markov(msg.chat.id)
     txt = await g.generate_long_text(custom=True)
     if not txt: txt = "Мало данных для генерации"
     await msg.answer(txt)
+
 
 @router.message(and_f(Command("gdl"),ChatTypeFilter(group_chat)))
 async def gen_long_dem(msg: Message):
@@ -39,6 +44,7 @@ async def gen_long_dem(msg: Message):
         await msg.answer("Мало данных для генерации ")
         return
     await send_photo(msg.chat.id,img,'gdl')
+
 
 @router.message(and_f(Command("gset"),ChatTypeFilter(group_chat)))
 async def settings_manager(msg: Message,command: CommandObject):

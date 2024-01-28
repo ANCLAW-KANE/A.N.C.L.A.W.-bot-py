@@ -13,12 +13,14 @@ from enums import ColorsRGB
 
 router = Router(name="exc")
 
+
 @router.message(and_f(Command("t"),ChatIDFilter(tr_chat)))
 async def gen_tr(msg: Message):
     g = await get_data_markov(msg.chat.id)
     img = await g.gen_mem('trbnk')
     if img:  await send_photo(msg.chat.id,img,'gtr')
     else : await msg.answer('Ошибка генерации')
+
 
 @router.message(and_f(Command("th"),ChatIDFilter(tr_chat)))
 async def gen_tr(msg: Message):

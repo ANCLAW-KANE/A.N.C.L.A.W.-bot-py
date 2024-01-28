@@ -15,4 +15,9 @@ set pathvenvtg=C:\Users\venvs\%tgbotvenvname%\Scripts\python.exe
 poetry env use %pathvenvtg%
 cd ..
 echo ____________________________ Run ____________________________
+::C:\Users\venvs\%tgbotvenvname%\Scripts\scalene.exe --html --profile-all MAIN3.py
+::%pathvenvtg% -m cProfile -o dump.out MAIN3.py
 %pathvenvtg% MAIN3.py
+::C:\Users\venvs\%tgbotvenvname%\Scripts\pyinstrument.exe -r html -o dump.html MAIN3.py
+::C:\Users\venvs\%tgbotvenvname%\Scripts\mprof run --include-children MAIN3.py
+pause
